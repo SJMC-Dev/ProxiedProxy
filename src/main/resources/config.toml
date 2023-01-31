@@ -1,0 +1,27 @@
+# Available options:
+# - PROXY: Your server accepts connection from trusted ENTRIES or from clients.
+# - ENTRY: Your server connects to several downstream PROXIES or servers.
+#          Downstream servers(spigot/paper/...) should set up bungeecord/bungeeguard forwarding.
+#          Downstream servers does not support RSA/KEY verification.
+role = "PROXY"
+
+# Contents below are valid for PROXY servers
+[proxy]
+# Set to false to disable connection from clients.
+allow-client-connection = true
+
+# Contents below are valid for ENTRY servers
+[entry]
+# Replace /server with your custom command.
+server-command-alias = "hub"
+# Available options:
+# - RSA: Prefered
+# - KEY
+# Downstream PROXIES should add contents in generated entry.json to their TrustedEntries.json list.
+# entry.json is just a generated file for you to conveniently send it to the downstream PROXIES, modifications have no effect.
+verification-type = "RSA"
+entry-id = ""
+
+[entry.key]
+# Valid if verification-type is set to "KEY"
+key = ""
