@@ -1,8 +1,6 @@
 package work.art1st.proxiedproxy;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -35,6 +33,7 @@ import work.art1st.proxiedproxy.util.VelocityInjector;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,7 +43,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Locale;
 
 
 @Plugin(
@@ -57,7 +56,6 @@ import java.util.concurrent.TimeUnit;
 public class ProxiedProxy {
 
     public static final String URL = "https://mc.sjtu.cn/wiki";
-    private final int FORWARDING_PACKET_TIMEOUT = 10;
     @Getter
     private final ProxyServer proxy;
     @Getter
@@ -69,9 +67,6 @@ public class ProxiedProxy {
     private final EntryConfig entryConfig = new EntryConfig();
     @Getter
     private final ProxyConfig proxyConfig = new ProxyConfig();
-    private final Cache<String, ForwardingParser> profileCache = Caffeine.newBuilder()
-            .expireAfterAccess(FORWARDING_PACKET_TIMEOUT, TimeUnit.SECONDS)
-            .build();
     private boolean verbose;
     @Getter
     private Role role;
@@ -220,10 +215,15 @@ public class ProxiedProxy {
                 /* getVirtualHost() extracts vhost from the address field of a handshake packet.
                  * Therefore, by comparing result of getVirtualHost() and original address field,
                  * we can determine whether the inbound connection is from an upstream entry. */
-                String cleanedAddress = event.getConnection().getVirtualHost().isPresent() ? event.getConnection().getVirtualHost().get().getHostString() : "";
+                String cleanedAddress = event.getConnection().getVirtualHost().map(InetSocketAddress::getHostString).map(str -> str.toLowerCase(Locale.ROOT)).orElse("");
                 LoginInboundConnection loginInboundConnection = (LoginInboundConnection) event.getConnection();
-                if (!ForwardingParser.getServerAddressFromConnection(loginInboundConnection)
-                        .equals(cleanedAddress)) {
+                /* origAddress is the original address field from handshake packet.
+                 * Velocity removes the '.' at the end if using SRV record. */
+                String origAddress = ForwardingParser.getServerAddressFromConnection(loginInboundConnection).toLowerCase(Locale.ROOT);
+                if (!origAddress.isEmpty() && origAddress.charAt(origAddress.length() - 1) == '.') {
+                    origAddress = origAddress.substring(0, origAddress.length() - 1);
+                }
+                if (!cleanedAddress.equals(origAddress)) {
                     /* Incoming connection is from an upstream entry.
                      * We send a LoginPluginMessage requesting for player info forwarding. */
                     loginInboundConnection.sendLoginPluginMessage(channel, ForwardingPluginChannel.FORWARDING_REQUEST.getBytes(StandardCharsets.UTF_8), bytes -> {
@@ -237,7 +237,7 @@ public class ProxiedProxy {
                             if (!parser.isTrusted(proxyConfig.trustedEntries)) {
                                 loginInboundConnection.disconnect(Component.text("You are connecting from an untrusted entry."));
                             }
-                            profileCache.put(parser.getProfile().getName(), parser);
+                            proxyConfig.profileCache.put(parser.getProfile().getName(), parser);
                         }
                     });
                     /* Set to offline mode to disable encryption,
@@ -259,10 +259,10 @@ public class ProxiedProxy {
     public void onGameProfileRequest(GameProfileRequestEvent event) {
         if (role.equals(Role.PROXY)) {
             debugOutput("GameProfileRequest");
-            ForwardingParser forwarded = profileCache.getIfPresent(event.getUsername());
+            ForwardingParser forwarded = proxyConfig.profileCache.getIfPresent(event.getUsername());
             if (forwarded != null) {
                 event.setGameProfile(forwarded.getProfile());
-                profileCache.invalidate(event.getUsername());
+                proxyConfig.profileCache.invalidate(event.getUsername());
                 try {
                     forwarded.setConnectionRemoteAddress((LoginInboundConnection) event.getConnection());
                 } catch (NoSuchFieldException | IllegalAccessException e) {
