@@ -14,6 +14,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.config.PlayerInfoForwarding;
 import com.velocitypowered.proxy.config.VelocityConfiguration;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
@@ -25,13 +26,16 @@ import work.art1st.proxiedproxy.command.ReloadCommand;
 import work.art1st.proxiedproxy.config.EntryConfig;
 import work.art1st.proxiedproxy.config.ProxyConfig;
 import work.art1st.proxiedproxy.config.TrustedEntry;
+import work.art1st.proxiedproxy.connection.ServerListPingHandler;
 import work.art1st.proxiedproxy.forwarding.ForwardingParser;
 import work.art1st.proxiedproxy.forwarding.ForwardingPluginChannel;
 import work.art1st.proxiedproxy.forwarding.VerificationType;
 import work.art1st.proxiedproxy.util.RSAUtil;
+import work.art1st.proxiedproxy.util.ReflectUtil;
 import work.art1st.proxiedproxy.util.VelocityInjector;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -104,7 +108,7 @@ public class ProxiedProxy {
         return success;
     }
 
-    public boolean _initialize() throws IOException {
+    private boolean _initialize() throws IOException {
         FileConfig configFile = FileConfig.of(dataDirectory.resolve("config.toml").toFile());
         configFile.load();
 
@@ -175,6 +179,28 @@ public class ProxiedProxy {
                 fileWriter.write(new Gson().toJson(self));
                 fileWriter.flush();
                 fileWriter.close();
+                /* Ping forward settings */
+                if (configFile.getOrElse("entry.pass-through-ping-vhost", true)) {
+                    try {
+                        Field serverListPingHandlerField = ReflectUtil.handleAccessible(proxy.getClass().getDeclaredField("serverListPingHandler"));
+                        if (entryConfig.velocityServerListPingHandler == null) {
+                            entryConfig.velocityServerListPingHandler = (com.velocitypowered.proxy.connection.util.ServerListPingHandler) serverListPingHandlerField.get(proxy);
+                        }
+                        serverListPingHandlerField.set(proxy, new ServerListPingHandler((VelocityServer) proxy));
+                    } catch (NoSuchFieldException | IllegalAccessException e) {
+                        logger.warn("Failed to replace serverListPingHandler.");
+                    }
+                } else {
+                    if (entryConfig.velocityServerListPingHandler != null) {
+                        try {
+                            Field serverListPingHandlerField = ReflectUtil.handleAccessible(proxy.getClass().getDeclaredField("serverListPingHandler"));
+                            serverListPingHandlerField.set(proxy, entryConfig.velocityServerListPingHandler);
+                        } catch (NoSuchFieldException | IllegalAccessException e) {
+                            /* Should be impossible */
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
                 break;
             case PROXY:
                 proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", true);

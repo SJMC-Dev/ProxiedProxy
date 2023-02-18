@@ -21,6 +21,7 @@ server-command-alias = "hub"
 # entry.json is just a generated file for you to conveniently send it to the downstream PROXIES, modifications have no effect.
 verification-type = "RSA"
 entry-id = ""
+pass-through-ping-vhost = true
 
 [entry.key]
 # Valid if verification-type is set to "KEY"
