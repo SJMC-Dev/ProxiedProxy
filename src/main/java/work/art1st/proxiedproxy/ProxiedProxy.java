@@ -255,16 +255,19 @@ public class ProxiedProxy {
                     loginInboundConnection.sendLoginPluginMessage(channel, ForwardingPluginChannel.FORWARDING_REQUEST.getBytes(StandardCharsets.UTF_8), bytes -> {
                         /* Async callback function that stores forwarded player info into cache
                          * Seems that the callback is always invoked before the next event(GameProfileRequestEvent). (Is it guaranteed?) */
-                        if (bytes != null) {
-                            String response = new String(bytes, StandardCharsets.UTF_8);
-                            debugOutput("Received LoginPluginMessage response:");
-                            debugOutput(response);
-                            ForwardingParser parser = new Gson().fromJson(response, ForwardingParser.class);
-                            if (!parser.isTrusted(proxyConfig.trustedEntries)) {
-                                loginInboundConnection.disconnect(Component.text("You are connecting from an untrusted entry."));
-                            }
-                            proxyConfig.profileCache.put(parser.getProfile().getName(), parser);
+                        if (bytes == null) {
+                            loginInboundConnection.disconnect(Component.text("You are connecting from an untrusted entry."));
+                            return;
                         }
+                        String response = new String(bytes, StandardCharsets.UTF_8);
+                        debugOutput("Received LoginPluginMessage response:");
+                        debugOutput(response);
+                        ForwardingParser parser = new Gson().fromJson(response, ForwardingParser.class);
+                        if (!parser.isTrusted(proxyConfig.trustedEntries)) {
+                            loginInboundConnection.disconnect(Component.text("You are connecting from an untrusted entry."));
+                            return;
+                        }
+                        proxyConfig.profileCache.put(parser.getProfile().getName(), parser);
                     });
                     /* Set to offline mode to disable encryption,
                      * since velocity does not support encrypted connection to downstream server. */

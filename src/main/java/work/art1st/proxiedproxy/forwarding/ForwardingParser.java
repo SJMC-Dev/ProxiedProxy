@@ -120,6 +120,9 @@ public class ForwardingParser {
 
     public boolean isTrusted(Map<String, TrustedEntry> entries) {
         TrustedEntry entry = entries.get(entryId);
+        if (profile == null) {
+            return false;
+        }
         if (signature != null) {
             if (entry.getType().equals(VerificationType.RSA)) {
                 try {
