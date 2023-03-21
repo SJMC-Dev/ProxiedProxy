@@ -249,7 +249,9 @@ public class ProxiedProxy {
                 if (!origAddress.isEmpty() && origAddress.charAt(origAddress.length() - 1) == '.') {
                     origAddress = origAddress.substring(0, origAddress.length() - 1);
                 }
-                if (!cleanedAddress.equals(origAddress)) {
+                debugOutput("origAddress:");
+                debugOutput(origAddress);
+                if (!cleanedAddress.equals(origAddress) && !origAddress.endsWith("\0fml\0") && !origAddress.endsWith("\0fml2\0")) {
                     /* Incoming connection is from an upstream entry.
                      * We send a LoginPluginMessage requesting for player info forwarding. */
                     loginInboundConnection.sendLoginPluginMessage(channel, ForwardingPluginChannel.FORWARDING_REQUEST.getBytes(StandardCharsets.UTF_8), bytes -> {
