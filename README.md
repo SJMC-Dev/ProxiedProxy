@@ -59,3 +59,10 @@ key = ""
 
 ### PROXY设置教程
 安装本插件，将上游ENTRY的公钥/KEY添加到`TrustedEntries.json`中（注意json格式），使用`/prox reload`重新加载配置文件。
+
+## See Also
+[MUA Proxy Plugin](https://github.com/MagicalSheep/mua-proxy-plugin)：上游ENTRY的frps协同插件
+
+[MUA Frp Daemon](https://github.com/MUAlliance/MUAFrpDaemon)：frpc守护进程，支持ENTRY列表自动同步，支持运行Velocity
+
+[Wiki: 联合大厅](https://wiki.mualliance.ltd/%E8%81%94%E5%90%88%E5%A4%A7%E5%8E%85)
