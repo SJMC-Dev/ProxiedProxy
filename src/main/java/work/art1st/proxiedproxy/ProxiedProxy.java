@@ -265,7 +265,7 @@ public class ProxiedProxy {
                         debugOutput("Received LoginPluginMessage response:");
                         debugOutput(response);
                         ForwardingParser parser = new Gson().fromJson(response, ForwardingParser.class);
-                        if (!parser.isTrusted(proxyConfig.trustedEntries)) {
+                        if (!parser.isTrusted(proxyConfig)) {
                             loginInboundConnection.disconnect(Component.text("You are connecting from an untrusted entry."));
                             return;
                         }

@@ -8,6 +8,7 @@ import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
 import com.velocitypowered.proxy.protocol.packet.Handshake;
 import lombok.Getter;
+import work.art1st.proxiedproxy.config.ProxyConfig;
 import work.art1st.proxiedproxy.config.TrustedEntry;
 import work.art1st.proxiedproxy.util.RSAUtil;
 import work.art1st.proxiedproxy.util.ReflectUtil;
@@ -118,9 +119,11 @@ public class ForwardingParser {
         return body.toString();
     }
 
-    public boolean isTrusted(Map<String, TrustedEntry> entries) {
-        TrustedEntry entry = entries.get(entryId);
-        if (profile == null) {
+    public boolean isTrusted(ProxyConfig proxyConfig) {
+        TrustedEntry entry = proxyConfig.trustedEntries.get(entryId);
+        if (entry == null
+                || profile == null
+                || Calendar.getInstance().getTimeInMillis() - timestamp > proxyConfig.FORWARDING_PACKET_TIMEOUT * 1000) {
             return false;
         }
         if (signature != null) {

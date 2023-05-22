@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class ProxyConfig {
     public final Map<String, TrustedEntry> trustedEntries = new HashMap<>();
     public boolean allowClientConnection;
-    private final int FORWARDING_PACKET_TIMEOUT = 10;
+    public final int FORWARDING_PACKET_TIMEOUT = 10;
     public final Cache<String, ForwardingParser> profileCache = Caffeine.newBuilder()
             .expireAfterAccess(FORWARDING_PACKET_TIMEOUT, TimeUnit.SECONDS)
             .build();
