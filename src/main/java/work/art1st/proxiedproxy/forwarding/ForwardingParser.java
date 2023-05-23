@@ -23,7 +23,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Calendar;
-import java.util.Map;
 
 /**
  * Parses information forwarding packet.
@@ -119,13 +118,21 @@ public class ForwardingParser {
         return body.toString();
     }
 
-    public boolean isTrusted(ProxyConfig proxyConfig) {
+    public boolean isTrusted(ProxyConfig proxyConfig, LoginInboundConnection loginInboundConnection) {
         TrustedEntry entry = proxyConfig.trustedEntries.get(entryId);
         if (entry == null
                 || profile == null
                 || Calendar.getInstance().getTimeInMillis() - timestamp > proxyConfig.FORWARDING_PACKET_TIMEOUT * 1000) {
             return false;
         }
+        InetSocketAddress entryAddr = proxyConfig.entryAddrCache.getIfPresent(entryId);
+        if (entryAddr == null) {
+            /* Not in cache, the connection is from trusted host because attackers cannot fake signature with timestamp. */
+            proxyConfig.entryAddrCache.put(entryId, loginInboundConnection.getRemoteAddress());
+        } else if (!entryAddr.equals(loginInboundConnection.getRemoteAddress())) {
+            /* In cache, from malicious address. */
+            return false;
+        } /* else: In cache, from trusted address. */
         if (signature != null) {
             if (entry.getType().equals(VerificationType.RSA)) {
                 try {
