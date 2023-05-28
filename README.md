@@ -60,6 +60,11 @@ key = ""
 ### PROXY设置教程
 安装本插件，将上游ENTRY的公钥/KEY添加到`TrustedEntries.json`中（注意json格式），使用`/prox reload`重新加载配置文件。
 
+## 构建
+
+- 下载源码，下载`velocity.jar`到`libraries`目录。
+- 执行`gradle jar`
+
 ## See Also
 [MUA Proxy Plugin](https://github.com/MagicalSheep/mua-proxy-plugin)：上游ENTRY的frps协同插件
 
