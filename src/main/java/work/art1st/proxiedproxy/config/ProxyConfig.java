@@ -19,8 +19,8 @@ public class ProxyConfig {
     public final Cache<String, ForwardingParser> profileCache = Caffeine.newBuilder()
             .expireAfterAccess(FORWARDING_PACKET_TIMEOUT, TimeUnit.SECONDS)
             .build();
-    /* entryAddrCache stores entry-addr pairs. It expires longer than the timestamp's valid period, thus protecting from replay attacks. */
-    public final Cache<String, InetSocketAddress> entryAddrCache = Caffeine.newBuilder()
+    /* entryTokenCache stores the recently used tokens (sign body). It expires longer than the timestamp's valid period, thus protecting from replay attacks. */
+    public final Cache<String, Boolean> entryTokenCache = Caffeine.newBuilder()
             .expireAfterAccess(FORWARDING_PACKET_TIMEOUT + 5, TimeUnit.SECONDS)
             .build();
 }

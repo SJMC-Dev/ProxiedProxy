@@ -8,6 +8,7 @@ import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
 import com.velocitypowered.proxy.protocol.packet.Handshake;
 import lombok.Getter;
+import work.art1st.proxiedproxy.ProxiedProxy;
 import work.art1st.proxiedproxy.config.ProxyConfig;
 import work.art1st.proxiedproxy.config.TrustedEntry;
 import work.art1st.proxiedproxy.util.RSAUtil;
@@ -118,26 +119,29 @@ public class ForwardingParser {
         return body.toString();
     }
 
-    public boolean isTrusted(ProxyConfig proxyConfig, LoginInboundConnection loginInboundConnection) {
+    public boolean isTrusted(ProxyConfig proxyConfig, LoginInboundConnection loginInboundConnection, ProxiedProxy proxy) {
         TrustedEntry entry = proxyConfig.trustedEntries.get(entryId);
         if (entry == null
                 || profile == null
                 || Calendar.getInstance().getTimeInMillis() - timestamp > proxyConfig.FORWARDING_PACKET_TIMEOUT * 1000) {
             return false;
         }
-        InetSocketAddress entryAddr = proxyConfig.entryAddrCache.getIfPresent(entryId);
-        if (entryAddr == null) {
+        boolean tokenIsUsed = (proxyConfig.entryTokenCache.getIfPresent(getSignBody()) == null);
+        if (tokenIsUsed) {
             /* Not in cache, the connection is from trusted host because attackers cannot fake signature with timestamp. */
-            proxyConfig.entryAddrCache.put(entryId, loginInboundConnection.getRemoteAddress());
-        } else if (!entryAddr.equals(loginInboundConnection.getRemoteAddress())) {
+            proxyConfig.entryTokenCache.put(getSignBody(), true);
+        } else {
             /* In cache, from malicious address. */
+            proxy.debugOutput("Connecting from malicious address in cache. from: %s; cache: %s");
             return false;
         } /* else: In cache, from trusted address. */
         if (signature != null) {
             if (entry.getType().equals(VerificationType.RSA)) {
                 try {
+                    proxy.debugOutput("Validating RSA signature.");
                     return RSAUtil.validate(getSignBody(), signature, entry.getPublicKey());
                 } catch (InvalidKeyException e) {
+                    proxy.debugOutput("Invalid key.");
                     return false;
                 } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                     throw new RuntimeException(e);

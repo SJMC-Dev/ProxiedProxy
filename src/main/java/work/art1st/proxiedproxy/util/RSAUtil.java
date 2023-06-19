@@ -85,9 +85,7 @@ public class RSAUtil {
             signer.initSign(privateKey);
             signer.update(content.getBytes());
             return Base64.getEncoder().encodeToString(signer.sign());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (SignatureException e) {
+        } catch (NoSuchAlgorithmException | SignatureException e) {
             throw new RuntimeException(e);
         }
     }
@@ -99,9 +97,7 @@ public class RSAUtil {
             signer.update(content.getBytes());
             byte[] signatureBytes = Base64.getDecoder().decode(signature);
             return signer.verify(signatureBytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (SignatureException e) {
+        } catch (NoSuchAlgorithmException | SignatureException e) {
             throw new RuntimeException(e);
         }
     }
