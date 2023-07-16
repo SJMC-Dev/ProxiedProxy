@@ -1,4 +1,4 @@
-package work.art1st.proxiedproxy.connection;
+package work.art1st.proxiedproxy.platform.velocity.connection;
 
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -12,12 +12,10 @@ import com.velocitypowered.proxy.protocol.packet.StatusRequest;
 import com.velocitypowered.proxy.protocol.packet.StatusResponse;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /* Originally com.velocitypowered.proxy.server.PingSessionHandler */
-public class PingSessionHandler implements MinecraftSessionHandler {
+public class VPingSessionHandler implements MinecraftSessionHandler {
     private final CompletableFuture<ServerPing> result;
     private final RegisteredServer server;
     private final MinecraftConnection connection;
@@ -26,7 +24,7 @@ public class PingSessionHandler implements MinecraftSessionHandler {
     private boolean completed = false;
 
     /* Use vHost here */
-    PingSessionHandler(CompletableFuture<ServerPing> result, RegisteredServer server, MinecraftConnection connection, ProtocolVersion version, String vHost) {
+    VPingSessionHandler(CompletableFuture<ServerPing> result, RegisteredServer server, MinecraftConnection connection, ProtocolVersion version, String vHost) {
         this.result = result;
         this.server = server;
         this.connection = connection;
@@ -49,7 +47,7 @@ public class PingSessionHandler implements MinecraftSessionHandler {
     public boolean handle(StatusResponse packet) {
         this.completed = true;
         this.connection.close(true);
-        ServerPing ping = (ServerPing) VelocityServer.getPingGsonInstance(this.version).fromJson(packet.getStatus(), ServerPing.class);
+        ServerPing ping = VelocityServer.getPingGsonInstance(this.version).fromJson(packet.getStatus(), ServerPing.class);
         this.result.complete(ping);
         return true;
     }

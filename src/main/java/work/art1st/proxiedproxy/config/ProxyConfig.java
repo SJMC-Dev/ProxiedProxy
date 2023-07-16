@@ -2,9 +2,9 @@ package work.art1st.proxiedproxy.config;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import work.art1st.proxiedproxy.forwarding.ForwardingParser;
+import work.art1st.proxiedproxy.platform.common.forwarding.ForwardingParser;
+import work.art1st.proxiedproxy.union.SkinServiceBackendVerifier;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -23,4 +23,5 @@ public class ProxyConfig {
     public final Cache<String, Boolean> entryTokenCache = Caffeine.newBuilder()
             .expireAfterAccess(FORWARDING_PACKET_TIMEOUT + 5, TimeUnit.SECONDS)
             .build();
+    public SkinServiceBackendVerifier skinServiceBackendVerifier;
 }

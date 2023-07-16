@@ -1,4 +1,4 @@
-package work.art1st.proxiedproxy.packet;
+package work.art1st.proxiedproxy.platform.velocity.packet;
 
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
@@ -10,7 +10,7 @@ import io.netty.buffer.ByteBuf;
  * Notes: We cannot directly modify MAXIMUM_HOSTNAME_LENGTH here since it will be optimized by the compiler.
  */
 public class HandshakePacket extends Handshake {
-    private static final int MAXIMUM_HOSTNAME_LENGTH = 32768;
+    private static final int MAXIMUM_HOSTNAME_LENGTH = 32767;
 
     @Override
     public void decode(ByteBuf buf, ProtocolUtils.Direction direction, ProtocolVersion ignored) {

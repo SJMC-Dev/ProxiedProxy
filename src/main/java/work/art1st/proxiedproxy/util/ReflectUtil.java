@@ -22,7 +22,7 @@ public class ReflectUtil {
     /**
      * 操作 Accessible 属性
      */
-    public static Constructor<?> handleAccessible(Constructor<?> constructor) {
+    public static<T> Constructor<T> handleAccessible(Constructor<T> constructor) {
         constructor.setAccessible(true);
         return constructor;
     }
@@ -33,6 +33,16 @@ public class ReflectUtil {
     public static Field handleAccessible(Field field) {
         field.setAccessible(true);
         return field;
+    }
+
+    public static<T, V> void setDeclaredFieldValue(T target, String fieldName, V value) throws IllegalAccessException, NoSuchFieldException {
+        Field field = ReflectUtil.handleAccessible(target.getClass().getDeclaredField(fieldName));
+        field.set(target, value);
+    }
+
+    public static<T, V> V getDeclaredFieldValue(T target, String fieldName) throws IllegalAccessException, NoSuchFieldException {
+        Field field = ReflectUtil.handleAccessible(target.getClass().getDeclaredField(fieldName));
+        return (V) field.get(target);
     }
 
     /**

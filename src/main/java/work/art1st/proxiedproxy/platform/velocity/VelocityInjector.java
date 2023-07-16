@@ -1,9 +1,10 @@
-package work.art1st.proxiedproxy.util;
+package work.art1st.proxiedproxy.platform.velocity;
 
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import com.velocitypowered.proxy.protocol.packet.Handshake;
-import work.art1st.proxiedproxy.packet.HandshakePacket;
+import work.art1st.proxiedproxy.platform.velocity.packet.HandshakePacket;
+import work.art1st.proxiedproxy.util.ReflectUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -21,7 +22,7 @@ public class VelocityInjector {
     public void inject() throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Field serverboundField = ReflectUtil.handleAccessible(StateRegistry.class.getDeclaredField("serverbound"));
         StateRegistry.PacketRegistry serverboundHandshake = (StateRegistry.PacketRegistry) serverboundField.get(StateRegistry.HANDSHAKE);
-        redirectInput(serverboundHandshake, Handshake.class, () -> new HandshakePacket());
+        redirectInput(serverboundHandshake, Handshake.class, HandshakePacket::new);
     }
 
     /**

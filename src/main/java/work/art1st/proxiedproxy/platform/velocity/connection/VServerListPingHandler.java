@@ -1,4 +1,4 @@
-package work.art1st.proxiedproxy.connection;
+package work.art1st.proxiedproxy.platform.velocity.connection;
 
 import com.google.common.collect.ImmutableList;
 import com.spotify.futures.CompletableFutures;
@@ -11,6 +11,7 @@ import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.config.PingPassthroughMode;
 import com.velocitypowered.proxy.config.VelocityConfiguration;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
+import com.velocitypowered.proxy.connection.util.ServerListPingHandler;
 import com.velocitypowered.proxy.connection.util.VelocityInboundConnection;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
 import com.velocitypowered.proxy.protocol.netty.MinecraftDecoder;
@@ -35,9 +36,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.velocitypowered.proxy.network.Connections.*;
 
-public class ServerListPingHandler extends com.velocitypowered.proxy.connection.util.ServerListPingHandler {
+public class VServerListPingHandler extends ServerListPingHandler {
     private final VelocityServer server;
-    public ServerListPingHandler(VelocityServer server) {
+    public VServerListPingHandler(VelocityServer server) {
         super(server);
         this.server = server;
     }
@@ -86,6 +87,7 @@ public class ServerListPingHandler extends com.velocitypowered.proxy.connection.
                 continue;
             }
             VelocityRegisteredServer vrs = (VelocityRegisteredServer) rs.get();
+            /* MODIFIED HERE */
             pings.add(ping(server, vrs, connection.getConnection().eventLoop(), PingOptions.builder()
                     .version(responseProtocolVersion).build(), connection.getVirtualHost()));
         }
@@ -156,9 +158,9 @@ public class ServerListPingHandler extends com.velocitypowered.proxy.connection.
         }
         CompletableFuture<ServerPing> pingFuture = new CompletableFuture<>();
         server.createBootstrap(loop)
-                .handler(new ChannelInitializer<Channel>() {
+                .handler(new ChannelInitializer<>() {
                     @Override
-                    protected void initChannel(Channel ch) throws Exception {
+                    protected void initChannel(Channel ch) {
                         ch.pipeline()
                                 .addLast(FRAME_DECODER, new MinecraftVarintFrameDecoder())
                                 .addLast(READ_TIMEOUT,
@@ -178,7 +180,7 @@ public class ServerListPingHandler extends com.velocitypowered.proxy.connection.
                 .addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
                         MinecraftConnection conn = future.channel().pipeline().get(MinecraftConnection.class);
-                        PingSessionHandler handler = new PingSessionHandler(
+                        VPingSessionHandler handler = new VPingSessionHandler(
                                 pingFuture, backend, conn, pingOptions.getProtocolVersion(), vHost.orElse(backend.getServerInfo().getAddress()).getHostString());
                         conn.setSessionHandler(handler);
                     } else {

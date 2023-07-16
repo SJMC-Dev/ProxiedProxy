@@ -1,4 +1,4 @@
-package work.art1st.proxiedproxy.forwarding;
+package work.art1st.proxiedproxy.config;
 
 public enum VerificationType {
     RSA,

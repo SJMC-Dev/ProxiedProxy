@@ -1,7 +1,6 @@
 package work.art1st.proxiedproxy.config;
 
 import lombok.Getter;
-import work.art1st.proxiedproxy.forwarding.VerificationType;
 import work.art1st.proxiedproxy.util.RSAUtil;
 
 import java.security.NoSuchAlgorithmException;
@@ -10,11 +9,11 @@ import java.security.spec.InvalidKeySpecException;
 
 public class TrustedEntry {
     @Getter
-    private String id;
-    private String publicKey;
+    private final String id;
+    private String publicKeyString;
     @Getter
     private String key;
-    private PublicKey _publicKey;
+    private PublicKey publicKey;
 
     public TrustedEntry(String id, String content, VerificationType type) {
         this.id = id;
@@ -23,20 +22,20 @@ public class TrustedEntry {
                 this.key = content;
                 break;
             case RSA:
-                this.publicKey = content;
+                this.publicKeyString = content;
                 break;
         }
     }
 
     public PublicKey getPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
-        if (_publicKey == null) {
-            _publicKey = RSAUtil.convertStringToPublicKey(publicKey);
+        if (publicKey == null) {
+            publicKey = RSAUtil.convertStringToPublicKey(publicKeyString);
         }
-        return _publicKey;
+        return publicKey;
     }
 
     public VerificationType getType() {
-        if (publicKey != null) {
+        if (publicKeyString != null) {
             return VerificationType.RSA;
         }
         if (key != null) {

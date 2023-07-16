@@ -1,4 +1,4 @@
-package work.art1st.proxiedproxy.command;
+package work.art1st.proxiedproxy.platform.velocity.command;
 
 import com.google.common.collect.ImmutableList;
 import com.velocitypowered.api.command.CommandSource;
@@ -28,7 +28,7 @@ public class NewServerCommand implements SimpleCommand {
     public static final int MAX_SERVERS_TO_LIST = 50;
     private final ProxyServer server;
 
-    private String command;
+    private final String command;
 
     public NewServerCommand(ProxyServer server, String command) {
         this.server = server;
@@ -36,7 +36,7 @@ public class NewServerCommand implements SimpleCommand {
     }
 
     static List<RegisteredServer> sortedServerList(ProxyServer proxy) {
-        List<RegisteredServer> servers = new ArrayList(proxy.getAllServers());
+        List<RegisteredServer> servers = new ArrayList<>(proxy.getAllServers());
         servers.sort(Comparator.comparing(RegisteredServer::getServerInfo));
         return Collections.unmodifiableList(servers);
     }
@@ -122,6 +122,7 @@ public class NewServerCommand implements SimpleCommand {
                     );
         } else {
             serverTextComponent = serverTextComponent.color(NamedTextColor.GRAY)
+                    /* MODIFICATION IS HERE */
                     .clickEvent(ClickEvent.runCommand("/" + command + " " + serverInfo.getName()))
                     .hoverEvent(
                             showText(

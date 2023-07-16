@@ -1,0 +1,4 @@
+name: ProxiedProxy
+main: work.art1st.proxiedproxy.platform.bungeecord.BungeeMain
+version: 2.0.0-SNAPSHOT
+author: __ART1st__

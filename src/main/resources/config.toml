@@ -1,14 +1,24 @@
 # Available options:
 # - PROXY: Your server accepts connection from trusted ENTRIES or from clients.
-# - ENTRY: Your server connects to several downstream PROXIES or servers.
-#          Downstream servers(spigot/paper/...) should set up bungeecord/bungeeguard forwarding.
-#          Downstream servers does not support RSA/KEY verification.
+#          * If you are a bungeecord PROXY, do NOT expose your port to public network.
+#          * If you are a bungeecord PROXY, please disable online mode.
+#          * Only Velocity PROXIES support RSA/KEY verification and direct client connection.
+# - ENTRY: Your server connects to several downstream PROXIES (Velocity/Bungeecord) or servers (Spigot/Paper/...).
+#          * Downstream servers should set up bungeecord forwarding.
+#          * Downstream servers and Bungeecord PROXIES should NOT be exposed to public network.
 role = "PROXY"
 
 # Contents below are valid for PROXY servers
 [proxy]
 # Set to false to disable connection from clients.
-allow-client-connection = true
+allow-client-connection = false
+
+[proxy.skin-service-backend]
+# Both empty: Disabled
+# Both not empty: Will work only in whitelist mode
+blocked = []
+allowed = []
+union-query-api = "https://skin.mualliance.ltd/api/union/profile/mapped/byuuid/"
 
 # Contents below are valid for ENTRY servers
 [entry]
