@@ -58,12 +58,16 @@ public class PPlugin {
     public static boolean initialize() {
         boolean success = false;
         try {
-            copyResourceFile("config.toml", "config.toml", false);
-            copyResourceFile("config.toml", "config-template.toml", true);
-            configFile = FileConfig.of(dataDirectory.resolve("config.toml").toFile());
-            success = doInitialize();
+            copyResourceFile("config-proxy.toml", "config-template-proxy.toml", true);
+            copyResourceFile("config-entry.toml", "config-template-entry.toml", true);
+            if (PPlugin.getDataDirectory().resolve("config.toml").toFile().exists()) {
+                configFile = FileConfig.of(dataDirectory.resolve("config.toml").toFile());
+                success = doInitialize();
+            } else {
+                logger.info("Please edit your config and rename it into \"config.toml\", and then restart the proxy.");
+            }
         } catch (IOException e) {
-            logger.warn("IOException detected. Maybe the RSA key files are broken, or something wrong while reading config file.");
+            logger.error("IOException detected. Maybe the RSA key files are broken, or something wrong while reading config file.");
         } finally {
             if (!success) {
                 role = Role.DISABLED;
@@ -106,6 +110,7 @@ public class PPlugin {
                 entryConfig.entryId = configFile.get("entry.entry-id");
                 entryConfig.serverCommandAlias = configFile.getOrElse("entry.server-command-alias", "hub");
                 entryConfig.passThroughPingVhost = configFile.getOrElse("entry.pass-through-ping-vhost", true);
+                entryConfig.sendV1Verification = configFile.getOrElse("entry.send-v1-verification", false);
                 if (entryConfig.entryId == null) {
                     logger.error("Invalid entry-id.");
                     return false;
@@ -152,7 +157,7 @@ public class PPlugin {
                 vInstance.replaceServerCommand();
                 break;
             case PROXY:
-                proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", true);
+                proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
                 try {
                     proxyConfig.skinServiceBackendVerifier = new SkinServiceBackendVerifier(
                             configFile.getOrElse("proxy.skin-service-backend.allowed", new ArrayList<>()),

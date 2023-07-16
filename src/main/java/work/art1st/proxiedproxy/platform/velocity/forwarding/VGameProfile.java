@@ -1,6 +1,6 @@
 package work.art1st.proxiedproxy.platform.velocity.forwarding;
 
-import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.velocitypowered.api.util.GameProfile;
 import work.art1st.proxiedproxy.PPlugin;
 import work.art1st.proxiedproxy.platform.common.forwarding.GameProfileWrapper;
@@ -20,7 +20,7 @@ public final class VGameProfile extends GameProfileWrapper<GameProfile> {
     }
 
     @Override
-    public void setContentFromJsonElement(JsonElement jsonElement) {
-        gameProfile = PPlugin.getGson().fromJson(jsonElement, GameProfile.class);
+    public void setContentFromJsonObject(JsonObject jsonObject) {
+        gameProfile = PPlugin.getGson().fromJson(jsonObject, GameProfile.class);
     }
 }

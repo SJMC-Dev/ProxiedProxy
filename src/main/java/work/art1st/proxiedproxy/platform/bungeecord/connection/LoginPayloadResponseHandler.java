@@ -43,6 +43,7 @@ public class LoginPayloadResponseHandler extends PacketHandler {
     public void sendLoginPayloadRequest(String channel, String request) {
         ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(this);
         unsafe.sendPacket(generatePacket(channel, request));
+        PPlugin.debugOutput("Bungee: Sending LoginPluginMessage");
     }
     @Override
     public String toString() {
@@ -57,8 +58,11 @@ public class LoginPayloadResponseHandler extends PacketHandler {
 
     @Override
     public void handle(LoginPayloadResponse packet) {
+        PPlugin.debugOutput("Bungee: Received LoginPluginMessageResponse");
         ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(connection.getHandler());
-        PPlugin.getEventHandler().handleLoginPluginMessageResponse(new BLoginPluginMessageResponseEvent(packet.getData(), connection));
+        if (packet.getData() != null) {
+            PPlugin.getEventHandler().handleLoginPluginMessageResponse(new BLoginPluginMessageResponseEvent(packet.getData(), connection));
+        }
         PPlugin.getEventHandler().handleGameProfileRequest(new BGameProfileRequestEvent(connection));
     }
 

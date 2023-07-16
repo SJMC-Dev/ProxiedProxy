@@ -1,6 +1,6 @@
 package work.art1st.proxiedproxy.platform.common.forwarding;
 
-import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import lombok.Getter;
 
 import java.util.UUID;
@@ -10,5 +10,5 @@ public abstract class GameProfileWrapper<T> {
     protected T gameProfile;
     public abstract String getName();
     public abstract UUID getId();
-    public abstract void setContentFromJsonElement(JsonElement jsonElement);
+    public abstract void setContentFromJsonObject(JsonObject jsonObject);
 }

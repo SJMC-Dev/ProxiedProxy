@@ -16,4 +16,5 @@ public class EntryConfig {
     public PrivateKey privateKey;
     /* Valid only when verificationType is KEY */
     public String key;
+    public boolean sendV1Verification;
 }

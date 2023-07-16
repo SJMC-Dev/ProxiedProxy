@@ -5,7 +5,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.kyori.adventure.text.Component;
 import work.art1st.proxiedproxy.PPlugin;
-import work.art1st.proxiedproxy.platform.common.forwarding.GameProfileWrapper;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -39,21 +38,25 @@ public class SkinServiceBackendVerifier {
     protected URI buildQueryURI(UUID mappedUUID) throws MalformedURLException, URISyntaxException {
         return new URL(unionQueryAPI, mappedUUID.toString().replace("-", "")).toURI();
     }
-    public void kickIfNotAllowed(GameProfileWrapper<?> gameProfileWrapper, Callback callback) {
+    public void kickIfNotAllowed(UUID mappedUUID, Callback callback) {
+        PPlugin.debugOutput("Whitelist: " + allowed);
+        PPlugin.debugOutput("Blacklist: " + blocked);
         if (allowed.size() == 0 && blocked.size() == 0) {
             return;
         }
         try {
             httpClient.sendAsync(HttpRequest.newBuilder()
-                    .uri(buildQueryURI(gameProfileWrapper.getId()))
+                    .uri(buildQueryURI(mappedUUID))
                     .GET()
                     .build(),
                     HttpResponse.BodyHandlers.ofString()).thenAccept(response -> {
+                        PPlugin.debugOutput("Union API query returns status code " + response.statusCode());
+                        PPlugin.debugOutput("Response content: " + response.body());
                         if (response.statusCode() != 200) {
                             callback.kick(Component.text("Server internal error: Failed to verify your skin service provider."));
                         }
                         JsonObject json = PPlugin.getGson().fromJson(response.body(), JsonObject.class);
-                        JsonArray playerBackendList = json.get("backend_backends").getAsJsonObject().get("all").getAsJsonArray();
+                        JsonArray playerBackendList = json.get("backend_scopes").getAsJsonObject().get("all").getAsJsonArray();
                         if (allowed.size() > 0) {
                             for (String allowedBackend :
                                     allowed) {

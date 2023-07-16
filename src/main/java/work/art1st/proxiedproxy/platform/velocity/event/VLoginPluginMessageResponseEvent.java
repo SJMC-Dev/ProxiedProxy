@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 public final class VLoginPluginMessageResponseEvent implements PLoginPluginMessageResponseEvent {
     private final String message;
     private final VLoginInboundConnection connection;
+    private final ForwardingParser forwardingParser;
+
     public VLoginPluginMessageResponseEvent(byte[] message, VLoginInboundConnection connection) {
         if (message == null) {
             this.message = null;
@@ -18,10 +20,11 @@ public final class VLoginPluginMessageResponseEvent implements PLoginPluginMessa
             this.message = new String(message, StandardCharsets.UTF_8);
         }
         this.connection = connection;
+        this.forwardingParser = ForwardingParser.fromJson(this.message, VGameProfile.class);
     }
     @Override
     public ForwardingParser getForwardingParser() {
-        return ForwardingParser.fromJson(message, VGameProfile.class);
+        return forwardingParser;
     }
 
     @Override

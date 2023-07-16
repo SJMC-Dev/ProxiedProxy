@@ -3,6 +3,7 @@ package work.art1st.proxiedproxy.platform.velocity;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.event.player.GameProfileRequestEvent;
 import com.velocitypowered.api.event.player.ServerLoginPluginMessageEvent;
@@ -25,6 +26,7 @@ import work.art1st.proxiedproxy.platform.velocity.command.NewServerCommand;
 import work.art1st.proxiedproxy.platform.velocity.command.ReloadCommand;
 import work.art1st.proxiedproxy.platform.velocity.connection.VServerListPingHandler;
 import work.art1st.proxiedproxy.platform.velocity.event.VGameProfileRequestEvent;
+import work.art1st.proxiedproxy.platform.velocity.event.VPostLoginEvent;
 import work.art1st.proxiedproxy.platform.velocity.event.VPreLoginEvent;
 import work.art1st.proxiedproxy.platform.velocity.forwarding.VForwardingParser;
 import work.art1st.proxiedproxy.platform.velocity.forwarding.VPluginChannel;
@@ -77,6 +79,12 @@ public final class VelocityMain implements PlatformPluginInstance {
         PPlugin.getEventHandler().handleGameProfileRequest(new VGameProfileRequestEvent(event));
     }
 
+    /* Triggered on PROXY server. */
+    @Subscribe
+    public void onPostLogin(PostLoginEvent event) {
+        PPlugin.getEventHandler().handlePostLogin(new VPostLoginEvent(event));
+    }
+
     /* Triggered on ENTRY server. */
     @Subscribe
     public void onServerLoginPluginMessage(ServerLoginPluginMessageEvent event) {
@@ -91,10 +99,11 @@ public final class VelocityMain implements PlatformPluginInstance {
                         VForwardingParser parser = null;
                         switch (PPlugin.getEntryConfig().verificationType) {
                             case RSA:
-                                parser = new VForwardingParser(event.getConnection(), PPlugin.getEntryConfig().entryId, PPlugin.getEntryConfig().privateKey);
+                                parser = new VForwardingParser(event.getConnection(), PPlugin.getEntryConfig().entryId, PPlugin.getEntryConfig().privateKey, PPlugin.getEntryConfig().sendV1Verification);
                                 break;
                             case KEY:
-                                parser = new VForwardingParser(event.getConnection(), PPlugin.getEntryConfig().entryId, PPlugin.getEntryConfig().key);
+                                parser = new VForwardingParser(event.getConnection(), PPlugin.getEntryConfig().entryId, PPlugin.getEntryConfig().key, PPlugin.getEntryConfig().sendV1Verification);
+                                break;
                         }
                         String response = PPlugin.getGson().toJson(parser);
                         event.setResult(ServerLoginPluginMessageEvent.ResponseResult.reply(response.getBytes(StandardCharsets.UTF_8)));

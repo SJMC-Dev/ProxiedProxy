@@ -69,7 +69,7 @@ public final class VLoginInboundConnection implements PLoginInboundConnection {
         MinecraftConnection connection = ReflectUtil.getDeclaredFieldValue(delegate, "connection");
         //Field remoteAddressField = ReflectUtil.handleAccessible(connection.getClass().getDeclaredField("remoteAddress"));
         //remoteAddressField.set(connection, InetSocketAddress.createUnresolved(remoteAddress, 0));
-        ReflectUtil.setDeclaredFieldValue(connection, "remoteAddress", InetSocketAddress.createUnresolved(remoteAddress, 0));
+        ReflectUtil.setDeclaredFieldValue(connection, "remoteAddress", new InetSocketAddress(remoteAddress, 0));
     }
 
     @Override

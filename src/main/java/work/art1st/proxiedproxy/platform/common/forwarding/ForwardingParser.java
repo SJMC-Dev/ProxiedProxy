@@ -2,6 +2,7 @@ package work.art1st.proxiedproxy.platform.common.forwarding;
 
 import com.google.gson.JsonObject;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import work.art1st.proxiedproxy.PPlugin;
 import work.art1st.proxiedproxy.config.ProxyConfig;
 import work.art1st.proxiedproxy.config.TrustedEntry;
@@ -21,24 +22,25 @@ import java.util.Calendar;
  */
 @Getter
 public class ForwardingParser {
+    public static class VerificationField {
+        public VerificationType method;
+        public String value;
+    }
+
     protected String vHost;
     protected String remoteAddress;
     protected JsonObject profile;
 
     protected Long timestamp;
     protected String entryId;
-    protected String signature;
-    protected String hash;
+    protected VerificationField verificationField;
     protected transient GameProfileWrapper<?> gameProfileWrapper;
 
+    @SneakyThrows
     public static ForwardingParser fromJson(String json, Class<? extends GameProfileWrapper<?>> profileType) {
         ForwardingParser parser = PPlugin.getGson().fromJson(json, ForwardingParser.class);
-        try {
-            parser.gameProfileWrapper = profileType.getDeclaredConstructor().newInstance();
-            parser.gameProfileWrapper.setContentFromJsonElement(parser.profile);
-        } catch (Throwable e) {
-            parser = null;
-        }
+        parser.gameProfileWrapper = profileType.getDeclaredConstructor().newInstance();
+        parser.gameProfileWrapper.setContentFromJsonObject(parser.profile);
         return parser;
     }
 
@@ -67,7 +69,7 @@ public class ForwardingParser {
 
     protected String getSignBody() {
         StringBuilder body = new StringBuilder();
-        body.append(vHost).append(remoteAddress).append(profile).append(timestamp);
+        body.append(vHost).append(remoteAddress).append(profile.toString()).append(timestamp);
         if (entryId != null) {
             body.append(entryId);
         }
@@ -90,11 +92,11 @@ public class ForwardingParser {
             PPlugin.debugOutput("Connecting from malicious address in cache. from: %s; cache: %s");
             return true;
         } /* else: In cache, from trusted address. */
-        if (signature != null) {
+        if (verificationField.method.equals(VerificationType.RSA)) {
             if (entry.getType().equals(VerificationType.RSA)) {
                 try {
                     PPlugin.debugOutput("Validating RSA signature.");
-                    return !RSAUtil.validate(getSignBody(), signature, entry.getPublicKey());
+                    return !RSAUtil.validate(getSignBody(), verificationField.value, entry.getPublicKey());
                 } catch (InvalidKeyException e) {
                     PPlugin.debugOutput("Invalid key.");
                     return true;
@@ -104,7 +106,7 @@ public class ForwardingParser {
             }
         } else {
             if (entry.getType().equals(VerificationType.KEY)) {
-                return !calculateHash(getSignBody(), entry.getKey()).equals(hash);
+                return !calculateHash(getSignBody(), entry.getKey()).equals(verificationField.value);
             }
         }
         return true;
