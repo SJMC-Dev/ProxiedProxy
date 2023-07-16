@@ -1,12 +1,10 @@
-# Available options:
-# - PROXY: Your server accepts connection from trusted ENTRIES or from clients.
-#          * If you are a bungeecord PROXY, do NOT expose your port to public network.
-#          * If you are a bungeecord PROXY, please disable online mode.
-#          * Only Velocity PROXIES support RSA/KEY verification and direct client connection.
-# - ENTRY: Your server connects to several downstream PROXIES (Velocity/Bungeecord) or servers (Spigot/Paper/...).
-#          * Downstream servers should set up bungeecord forwarding.
-#          * Downstream servers and Bungeecord PROXIES should NOT be exposed to public network.
+# PROXY: Your server accepts connection from trusted ENTRIES or from clients.
+#      * If you are a bungeecord PROXY, do NOT expose your port to public network.
+#      * If you are a bungeecord PROXY, please disable online mode.
+#      * Only Velocity PROXIES support RSA/KEY verification and direct client connection.
 role = "PROXY"
+# Set to true to enable debug output
+verbose = false
 
 # Contents below are valid for PROXY servers
 [proxy]
