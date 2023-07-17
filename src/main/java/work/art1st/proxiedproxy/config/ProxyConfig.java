@@ -24,4 +24,5 @@ public class ProxyConfig {
             .expireAfterAccess(FORWARDING_PACKET_TIMEOUT + 5, TimeUnit.SECONDS)
             .build();
     public SkinServiceBackendVerifier skinServiceBackendVerifier;
+    public boolean sendSwitchServerPluginMessageToEntry;
 }

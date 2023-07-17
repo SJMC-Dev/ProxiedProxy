@@ -36,6 +36,10 @@ public class EventHandler {
             String response = event.getMessage();
 
             ForwardingParser parser = event.getForwardingParser();
+            if (parser == null) {
+                loginInboundConnection.disconnect(Component.text("Invalid login packet: Can not parse profile data."));
+                return;
+            }
             /* Async callback function that stores forwarded player info into cache
              * The callback is always invoked before the next event (GameProfileRequestEvent). */
             PPlugin.debugOutput(response);

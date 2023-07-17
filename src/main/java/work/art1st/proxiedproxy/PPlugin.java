@@ -158,6 +158,7 @@ public class PPlugin {
                 break;
             case PROXY:
                 proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
+                proxyConfig.sendSwitchServerPluginMessageToEntry = configFile.getOrElse("proxy.send-switch-server-plugin-message-to-entry", true);
                 try {
                     proxyConfig.skinServiceBackendVerifier = new SkinServiceBackendVerifier(
                             configFile.getOrElse("proxy.skin-service-backend.allowed", new ArrayList<>()),
