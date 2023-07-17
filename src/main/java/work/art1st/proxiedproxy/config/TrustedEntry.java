@@ -10,10 +10,10 @@ import java.security.spec.InvalidKeySpecException;
 public class TrustedEntry {
     @Getter
     private final String id;
-    private String publicKeyString;
+    private String publicKey;
     @Getter
     private String key;
-    private PublicKey publicKey;
+    private transient PublicKey publicKeyInstance;
 
     public TrustedEntry(String id, String content, VerificationType type) {
         this.id = id;
@@ -22,20 +22,20 @@ public class TrustedEntry {
                 this.key = content;
                 break;
             case RSA:
-                this.publicKeyString = content;
+                this.publicKey = content;
                 break;
         }
     }
 
     public PublicKey getPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
-        if (publicKey == null) {
-            publicKey = RSAUtil.convertStringToPublicKey(publicKeyString);
+        if (publicKeyInstance == null) {
+            publicKeyInstance = RSAUtil.convertStringToPublicKey(publicKey);
         }
-        return publicKey;
+        return publicKeyInstance;
     }
 
     public VerificationType getType() {
-        if (publicKeyString != null) {
+        if (publicKey != null) {
             return VerificationType.RSA;
         }
         if (key != null) {
