@@ -34,6 +34,5 @@ public class BGameProfileRequestEvent implements PGameProfileRequestEvent {
         handler.setUniqueId(gameProfile.getId());
         ReflectUtil.setDeclaredFieldValue(handler, "name", gameProfile.getName());
         ReflectUtil.setDeclaredFieldValue(handler, "loginProfile", gameProfile.getGameProfile());
-        connection.preLoginEventCallback();
     }
 }

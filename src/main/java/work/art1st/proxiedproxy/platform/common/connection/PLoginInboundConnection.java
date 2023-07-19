@@ -1,6 +1,7 @@
 package work.art1st.proxiedproxy.platform.common.connection;
 
 import net.kyori.adventure.text.Component;
+import work.art1st.proxiedproxy.PPlugin;
 
 import java.net.InetSocketAddress;
 import java.util.Locale;
@@ -17,6 +18,7 @@ public interface PLoginInboundConnection {
         if (!origAddress.isEmpty() && origAddress.charAt(origAddress.length() - 1) == '.') {
             origAddress = origAddress.substring(0, origAddress.length() - 1);
         }
+        PPlugin.debugOutput("ENTRY checker: origAddress = " + origAddress + " cleanedAddress = " + cleanedAddress);
         return !(!cleanedAddress.equals(origAddress)
                 && !origAddress.endsWith("\0fml\0")
                 && !origAddress.endsWith("\0fml2\0")

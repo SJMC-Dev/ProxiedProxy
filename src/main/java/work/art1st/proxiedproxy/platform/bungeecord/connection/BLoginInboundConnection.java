@@ -8,6 +8,7 @@ import net.md_5.bungee.api.event.AsyncEvent;
 import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
+import work.art1st.proxiedproxy.platform.bungeecord.packet.HandshakePacket;
 import work.art1st.proxiedproxy.platform.common.connection.PLoginInboundConnection;
 import work.art1st.proxiedproxy.platform.common.util.PluginChannel;
 import work.art1st.proxiedproxy.util.ReflectUtil;
@@ -30,7 +31,7 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
         this.handler = (InitialHandler) preLoginEvent.getConnection();
         this.event = preLoginEvent;
         this.ch = ReflectUtil.getDeclaredFieldValue(handler, "ch");
-        this.isDirectConnection = isVHostFromClient(handler.getVirtualHost(), handler.getHandshake().getHost());
+        this.isDirectConnection = isVHostFromClient(handler.getAddress(), ((HandshakePacket) handler.getHandshake()).getOriginalHostAddress());
     }
 
     @SneakyThrows
@@ -68,7 +69,7 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
         return handler;
     }
 
-    public void preLoginEventCallback() {
+    public void donePreLoginEvent() {
         origEventCallBack.done(cb_args_result, cb_args_error);
     }
 }

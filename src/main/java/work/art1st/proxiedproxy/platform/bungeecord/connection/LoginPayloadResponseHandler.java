@@ -64,6 +64,7 @@ public class LoginPayloadResponseHandler extends PacketHandler {
             PPlugin.getEventHandler().handleLoginPluginMessageResponse(new BLoginPluginMessageResponseEvent(packet.getData(), connection));
         }
         PPlugin.getEventHandler().handleGameProfileRequest(new BGameProfileRequestEvent(connection));
+        connection.donePreLoginEvent();
     }
 
 }
