@@ -19,27 +19,31 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
 
     private final InitialHandler handler;
     private final ChannelWrapper ch;
-    private final Callback<PreLoginEvent> origEventCallBack;
+    private final PreLoginEvent event;
+    private Callback<PreLoginEvent> origEventCallBack;
     private PreLoginEvent cb_args_result;
     private Throwable cb_args_error;
     private final boolean isDirectConnection;
+
     @SneakyThrows
     public BLoginInboundConnection(PreLoginEvent preLoginEvent) {
         this.handler = (InitialHandler) preLoginEvent.getConnection();
+        this.event = preLoginEvent;
         this.ch = ReflectUtil.getDeclaredFieldValue(handler, "ch");
+        this.isDirectConnection = isVHostFromClient(handler.getVirtualHost(), handler.getHandshake().getHost());
+    }
+
+    @SneakyThrows
+    @Override
+    public void sendLoginPluginMessage(String contents) {
         Field doneField = AsyncEvent.class.getDeclaredField("done");
         ReflectUtil.handleAccessible(doneField);
-        origEventCallBack = (Callback<PreLoginEvent>) doneField.get(preLoginEvent);
+        origEventCallBack = (Callback<PreLoginEvent>) doneField.get(event);
         Callback<PreLoginEvent> modifiedCallback = (result, error) -> {
             cb_args_result = result;
             cb_args_error = error;
         };
-        doneField.set(preLoginEvent, modifiedCallback);
-        isDirectConnection = isVHostFromClient(handler.getVirtualHost(), handler.getHandshake().getHost());
-    }
-
-    @Override
-    public void sendLoginPluginMessage(String contents) {
+        doneField.set(event, modifiedCallback);
         LoginPayloadResponseHandler payloadResponseHandler = new LoginPayloadResponseHandler(this, ch);
         payloadResponseHandler.sendLoginPayloadRequest(PluginChannel.CHANNEL_ID, PluginChannel.FORWARDING_REQUEST);
     }
