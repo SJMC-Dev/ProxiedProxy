@@ -22,7 +22,7 @@ public final class VLoginInboundConnection implements PLoginInboundConnection {
 
     public VLoginInboundConnection(LoginInboundConnection connection) {
         vConnection = connection;
-        InetSocketAddress address = vConnection.getVirtualHost().orElse(null);
+        String cleanedAddress = vConnection.getVirtualHost().map(InetSocketAddress::getHostString).map(str -> str.toLowerCase(Locale.ROOT)).orElse("");
         String origAddress;
         try {
             origAddress = getServerAddressFromConnection(vConnection).toLowerCase(Locale.ROOT);
@@ -30,7 +30,10 @@ public final class VLoginInboundConnection implements PLoginInboundConnection {
             vConnection.disconnect(Component.text("Invalid connection."));
             throw new RuntimeException(e);
         }
-        isDirectConnection = isVHostFromClient(address, origAddress);
+        if (!origAddress.isEmpty() && origAddress.charAt(origAddress.length() - 1) == '.') {
+            origAddress = origAddress.substring(0, origAddress.length() - 1);
+        }
+        isDirectConnection = !(!cleanedAddress.equals(origAddress) && !origAddress.endsWith("\0fml\0") && !origAddress.endsWith("\0fml2\0") && !origAddress.endsWith("\0fml3\0") && !origAddress.endsWith("\0fml4\0"));
     }
     private static String getServerAddressFromConnection(LoginInboundConnection inbound) throws NoSuchFieldException, IllegalAccessException {
         //Field delegateField = ReflectUtil.handleAccessible(inbound.getClass().getDeclaredField("delegate"));

@@ -7,17 +7,12 @@ import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.event.player.GameProfileRequestEvent;
 import com.velocitypowered.api.event.player.ServerLoginPluginMessageEvent;
-import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.config.PlayerInfoForwarding;
 import com.velocitypowered.proxy.config.VelocityConfiguration;
-import com.velocitypowered.proxy.connection.MinecraftConnection;
-import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
-import com.velocitypowered.proxy.connection.backend.VBungeeCordMessageResponder;
-import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
 import com.velocitypowered.proxy.connection.util.ServerListPingHandler;
 import lombok.Getter;
@@ -117,19 +112,6 @@ public final class VelocityMain implements PlatformPluginInstance {
                     }
                 }
             }
-        }
-    }
-
-    @SneakyThrows
-    @Subscribe
-    public void onServerPostConnection(ServerPostConnectEvent event) {
-        if (event.getPlayer().getCurrentServer().isPresent()) {
-            VelocityServerConnection serverConnection = (VelocityServerConnection) event.getPlayer().getCurrentServer().get();
-            MinecraftConnection clientConnection = serverConnection.ensureConnected();
-            BackendPlaySessionHandler sessionHandler = (BackendPlaySessionHandler) clientConnection.getSessionHandler();
-            assert sessionHandler != null;
-            ReflectUtil.setDeclaredFieldValue(sessionHandler, "bungeecordMessageResponder",
-                    new VBungeeCordMessageResponder(sessionHandler.getServer(), serverConnection.getPlayer()));
         }
     }
 
