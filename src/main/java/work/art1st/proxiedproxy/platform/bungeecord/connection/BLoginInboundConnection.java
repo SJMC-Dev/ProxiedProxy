@@ -22,6 +22,7 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
     private final Callback<PreLoginEvent> origEventCallBack;
     private PreLoginEvent cb_args_result;
     private Throwable cb_args_error;
+    private final boolean isDirectConnection;
     @SneakyThrows
     public BLoginInboundConnection(PreLoginEvent preLoginEvent) {
         this.handler = (InitialHandler) preLoginEvent.getConnection();
@@ -34,6 +35,7 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
             cb_args_error = error;
         };
         doneField.set(preLoginEvent, modifiedCallback);
+        isDirectConnection = isVHostFromClient(handler.getVirtualHost(), handler.getHandshake().getHost());
     }
 
     @Override
@@ -44,7 +46,7 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
 
     @Override
     public boolean isDirectConnection() {
-        return false;
+        return isDirectConnection;
     }
 
     @SneakyThrows
