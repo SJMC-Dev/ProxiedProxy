@@ -1,24 +1,23 @@
 # ENTRY: Your server connects to several downstream PROXIES (Velocity/Bungeecord) or servers (Spigot/Paper/...).
 #      * Downstream servers should set up bungeecord forwarding.
-#      * Downstream servers and Bungeecord PROXIES should NOT be exposed to public network.
 role = "ENTRY"
 # Set to true to enable debug output
 verbose = false
 
 # Contents below are valid for ENTRY servers
 [entry]
-# Replace /server with your custom command.
-server-command-alias = "hub"
-# Available options:
-# - RSA: Prefered
-# - KEY
-# Downstream PROXIES should add contents in generated entry.json to their TrustedEntries.json list.
-# entry.json is just a generated file for you to conveniently send it to the downstream PROXIES, modifications have no effect.
-verification-type = "RSA"
-entry-id = ""
-pass-through-ping-vhost = true
-send-v1-verification = false
+    # Replace /server with your custom command.
+    server-command-alias = "hub"
+    # Available options:
+    # - RSA: Prefered
+    # - KEY
+    # Downstream PROXIES should add contents in generated entry.json to their TrustedEntries.json list.
+    # entry.json is just a generated file for you to conveniently send it to the downstream PROXIES, modifications have no effect.
+    verification-type = "RSA"
+    entry-id = ""
+    pass-through-ping-vhost = true
+    send-v1-verification = false
 
-[entry.key]
-# Valid if verification-type is set to "KEY"
-key = ""
+    [entry.key]
+        # Valid if verification-type is set to "KEY"
+        key = ""
