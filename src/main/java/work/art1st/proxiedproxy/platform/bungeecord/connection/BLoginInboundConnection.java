@@ -26,12 +26,32 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
     private Throwable cb_args_error;
     private final boolean isDirectConnection;
 
+    /* Code from Velocity. */
+    static String cleanVhost(String hostname) {
+        // Clean out any anything after any zero bytes (this includes BungeeCord forwarding and the
+        // legacy Forge handshake indicator).
+        String cleaned = hostname;
+        int zeroIdx = cleaned.indexOf('\0');
+        if (zeroIdx > -1) {
+            cleaned = hostname.substring(0, zeroIdx);
+        }
+
+        // If we connect through an SRV record, there will be a period at the end (DNS usually elides
+        // this ending octet).
+        if (!cleaned.isEmpty() && cleaned.charAt(cleaned.length() - 1) == '.') {
+            cleaned = cleaned.substring(0, cleaned.length() - 1);
+        }
+        return cleaned;
+    }
+
+
     @SneakyThrows
     public BLoginInboundConnection(PreLoginEvent preLoginEvent) {
         this.handler = (InitialHandler) preLoginEvent.getConnection();
         this.event = preLoginEvent;
         this.ch = ReflectUtil.getDeclaredFieldValue(handler, "ch");
-        this.isDirectConnection = isVHostFromClient(handler.getAddress(), ((HandshakePacket) handler.getHandshake()).getOriginalHostAddress());
+        String origAddress = ((HandshakePacket) handler.getHandshake()).getOriginalHostAddress();
+        this.isDirectConnection = isVHostFromClient(cleanVhost(origAddress), origAddress);
     }
 
     @SneakyThrows

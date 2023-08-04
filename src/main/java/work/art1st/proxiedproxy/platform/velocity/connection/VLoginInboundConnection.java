@@ -30,7 +30,7 @@ public final class VLoginInboundConnection implements PLoginInboundConnection {
             vConnection.disconnect(Component.text("Invalid connection."));
             throw new RuntimeException(e);
         }
-        isDirectConnection = isVHostFromClient(address, origAddress);
+        isDirectConnection = isVHostFromClient(address == null ? "" : address.getHostString(), origAddress);
     }
     private static String getServerAddressFromConnection(LoginInboundConnection inbound) throws NoSuchFieldException, IllegalAccessException {
         //Field delegateField = ReflectUtil.handleAccessible(inbound.getClass().getDeclaredField("delegate"));

@@ -6,6 +6,9 @@ import java.util.UUID;
 
 public interface PPostLoginEvent {
     UUID getUniqueId();
-    String getName();
+    String getUsername();
+
+    boolean isOnlineMode();
+
     void disconnect(Component reason);
 }

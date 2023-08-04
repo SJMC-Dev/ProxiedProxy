@@ -12,13 +12,14 @@ public interface PLoginInboundConnection {
     /** Should only affect the effect of functions like "getRemoteAddress", not the address of the actual connection. */
     void setRemoteAddress(String remoteAddress);
     void disconnect(Component reason);
-    default boolean isVHostFromClient(InetSocketAddress address, String vHostValue) {
-        String cleanedAddress = address == null ? "" : address.getHostString().toLowerCase(Locale.ROOT);
+    default boolean isVHostFromClient(String address, String vHostValue) {
+        String cleanedAddress = address.toLowerCase(Locale.ROOT);
         String origAddress = vHostValue.toLowerCase(Locale.ROOT);
         if (!origAddress.isEmpty() && origAddress.charAt(origAddress.length() - 1) == '.') {
             origAddress = origAddress.substring(0, origAddress.length() - 1);
         }
         PPlugin.debugOutput("ENTRY checker: origAddress = " + origAddress + " cleanedAddress = " + cleanedAddress);
+        /* ENTRY would not append fml* at the end. It must be from the client if the address ends with fml*. */
         return !(!cleanedAddress.equals(origAddress)
                 && !origAddress.endsWith("\0fml\0")
                 && !origAddress.endsWith("\0fml2\0")

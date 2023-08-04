@@ -20,8 +20,13 @@ public class VPostLoginEvent implements PPostLoginEvent {
     }
 
     @Override
-    public String getName() {
+    public String getUsername() {
         return event.getPlayer().getUsername();
+    }
+
+    @Override
+    public boolean isOnlineMode() {
+        return event.getPlayer().isOnlineMode();
     }
 
     @Override

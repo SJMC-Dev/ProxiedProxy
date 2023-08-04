@@ -15,6 +15,7 @@ public class EventHandler {
             PPlugin.debugOutput("Event: PreLogin");
             PLoginInboundConnection loginInboundConnection = event.getConnection();
             if (!loginInboundConnection.isDirectConnection()) {
+                PPlugin.debugOutput("A client connects to the server from the ENTRY.");
                 /* Incoming connection is from an upstream entry.
                  * We send a LoginPluginMessage requesting for player info forwarding and upstream authentication. */
                 loginInboundConnection.sendLoginPluginMessage(PluginChannel.FORWARDING_REQUEST);
@@ -22,6 +23,7 @@ public class EventHandler {
                  * since velocity (ENTRY) does not support encrypted connection to downstream server (this PROXY). */
                 event.setResult(PPreLoginEvent.PreLoginResult.FORCE_OFFLINE);
             } else {
+                PPlugin.debugOutput("A client tries to directly connect to the server.");
                 if (!PPlugin.getProxyConfig().allowClientConnection) {
                     loginInboundConnection.disconnect(Component.text("Connection refused: Please connect to an entry server."));
                 }
@@ -61,7 +63,6 @@ public class EventHandler {
             ForwardingParser forwarded = PPlugin.getProxyConfig().profileCache.getIfPresent(event.getUsername());
             if (forwarded != null) {
                 event.setGameProfile(forwarded.getGameProfileWrapper());
-                PPlugin.getProxyConfig().profileCache.invalidate(event.getUsername());
                 event.getConnection().setRemoteAddress(forwarded.getRemoteAddress());
             } else {
                 if (!PPlugin.getProxyConfig().allowClientConnection) {
@@ -74,6 +75,14 @@ public class EventHandler {
     public void handlePostLogin(PPostLoginEvent event) {
         if (PPlugin.getRole().equals(PPlugin.Role.PROXY)) {
             PPlugin.debugOutput("Event: PostLoginEvent");
+            if (!event.isOnlineMode()) {
+                ForwardingParser forwarded = PPlugin.getProxyConfig().profileCache.getIfPresent(event.getUsername());
+                if (forwarded != null) {
+                    PPlugin.getProxyConfig().profileCache.invalidate(event.getUsername());
+                } else {
+                    event.disconnect(Component.text("Profile validation failed."));
+                }
+            }
             PPlugin.getProxyConfig().skinServiceBackendVerifier.kickIfNotAllowed(event.getUniqueId(), event::disconnect);
         }
     }

@@ -20,8 +20,13 @@ public class BPostLoginEvent implements PPostLoginEvent {
     }
 
     @Override
-    public String getName() {
+    public String getUsername() {
         return event.getPlayer().getName();
+    }
+
+    @Override
+    public boolean isOnlineMode() {
+        return event.getPlayer().getPendingConnection().isOnlineMode();
     }
 
     @Override
