@@ -83,7 +83,6 @@ public class EventHandler {
                     event.disconnect(Component.text("Profile validation failed."));
                 }
             }
-            PPlugin.getProxyConfig().skinServiceBackendVerifier.kickIfNotAllowed(event.getUniqueId(), event::disconnect);
         }
     }
 

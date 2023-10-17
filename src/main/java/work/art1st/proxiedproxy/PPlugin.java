@@ -12,11 +12,9 @@ import work.art1st.proxiedproxy.config.TrustedEntry;
 import work.art1st.proxiedproxy.config.VerificationType;
 import work.art1st.proxiedproxy.platform.common.PlatformPluginInstance;
 import work.art1st.proxiedproxy.platform.velocity.VelocityMain;
-import work.art1st.proxiedproxy.union.SkinServiceBackendVerifier;
 import work.art1st.proxiedproxy.util.RSAUtil;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
@@ -159,16 +157,6 @@ public class PPlugin {
             case PROXY:
                 proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
                 try {
-                    proxyConfig.skinServiceBackendVerifier = new SkinServiceBackendVerifier(
-                            configFile.getOrElse("proxy.skin-service-backend.allowed", new ArrayList<>()),
-                            configFile.getOrElse("proxy.skin-service-backend.blocked", new ArrayList<>()),
-                            configFile.getOrElse("proxy.skin-service-backend.union-query-api", SkinServiceBackendVerifier.DEFAULT_UNION_QUERY_API)
-                    );
-                } catch (MalformedURLException e) {
-                    logger.error("Bad union-query-api.");
-                    return false;
-                }
-                try {
                     File trustedEntriesListFile = dataDirectory.resolve("TrustedEntries.json").toFile();
                     JsonReader reader = new JsonReader(new FileReader(trustedEntriesListFile));
                     List<TrustedEntry> trustedEntriesList = PPlugin.getGson().fromJson(reader, new TypeToken<List<TrustedEntry>>() {
@@ -186,7 +174,7 @@ public class PPlugin {
                     logger.warn("Please consult " + WIKI_URL);
                     copyResourceFile("TrustedEntries.json", "TrustedEntries.json", false);
                 }
-                if (proxyConfig.trustedEntries.size() == 0) {
+                if (proxyConfig.trustedEntries.isEmpty()) {
                     logger.warn("There are no entries trusted.");
                 }
                 break;

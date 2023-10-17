@@ -6,14 +6,10 @@ plugins {
 }
 
 group = 'work.art1st'
-version = '2.0.0-SNAPSHOT'
+version = '2.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
-    maven {
-        name = 'papermc-repo'
-        url = 'https://repo.papermc.io/repository/maven-public/'
-    }
     maven { url "https://repo.codemc.io/repository/maven-public/" }
     maven { url "https://papermc.io/repo/repository/maven-public/" }
 }
