@@ -14,6 +14,7 @@ import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.util.ServerListPingHandler;
 import com.velocitypowered.proxy.connection.util.VelocityInboundConnection;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
+import com.velocitypowered.proxy.protocol.StateRegistry;
 import com.velocitypowered.proxy.protocol.netty.MinecraftDecoder;
 import com.velocitypowered.proxy.protocol.netty.MinecraftEncoder;
 import com.velocitypowered.proxy.protocol.netty.MinecraftVarintFrameDecoder;
@@ -182,7 +183,7 @@ public class VServerListPingHandler extends ServerListPingHandler {
                         MinecraftConnection conn = future.channel().pipeline().get(MinecraftConnection.class);
                         VPingSessionHandler handler = new VPingSessionHandler(
                                 pingFuture, backend, conn, pingOptions.getProtocolVersion(), vHost.orElse(backend.getServerInfo().getAddress()).getHostString());
-                        conn.setSessionHandler(handler);
+                        conn.setActiveSessionHandler(StateRegistry.HANDSHAKE, handler);
                     } else {
                         pingFuture.completeExceptionally(future.cause());
                     }
