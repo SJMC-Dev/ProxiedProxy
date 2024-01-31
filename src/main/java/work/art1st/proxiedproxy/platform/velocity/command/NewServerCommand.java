@@ -10,6 +10,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -57,7 +58,7 @@ public class NewServerCommand implements SimpleCommand {
             String serverName = args[0];
             Optional<RegisteredServer> toConnect = server.getServer(serverName);
             if (toConnect.isEmpty()) {
-                player.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(serverName)));
+                player.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.arguments(Component.text(serverName)));
                 return;
             }
 
@@ -111,7 +112,7 @@ public class NewServerCommand implements SimpleCommand {
             playersTextComponent = Component.translatable(
                     "velocity.command.server-tooltip-players-online");
         }
-        playersTextComponent = playersTextComponent.args(Component.text(connectedPlayers));
+        playersTextComponent = playersTextComponent.arguments(Component.text(connectedPlayers));
         if (serverInfo.getName().equals(currentPlayerServer)) {
             serverTextComponent = serverTextComponent.color(NamedTextColor.GREEN)
                     .hoverEvent(

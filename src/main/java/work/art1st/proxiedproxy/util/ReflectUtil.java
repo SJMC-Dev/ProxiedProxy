@@ -40,6 +40,7 @@ public class ReflectUtil {
         field.set(target, value);
     }
 
+    @SuppressWarnings("unchecked")
     public static<T, V> V getDeclaredFieldValue(T target, String fieldName) throws IllegalAccessException, NoSuchFieldException {
         Field field = ReflectUtil.handleAccessible(target.getClass().getDeclaredField(fieldName));
         return (V) field.get(target);

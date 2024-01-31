@@ -5,5 +5,5 @@ verbose = false
 
 # Contents below are valid for PROXY servers
 [proxy]
-# Set to false to disable connection from clients.
+    # Set to false to disable connection from clients.
     allow-client-connection = false

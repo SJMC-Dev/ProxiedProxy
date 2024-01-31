@@ -54,6 +54,7 @@ public final class BLoginInboundConnection implements PLoginInboundConnection {
         this.isDirectConnection = isVHostFromClient(cleanVhost(origAddress), origAddress);
     }
 
+    @SuppressWarnings("unchecked")
     @SneakyThrows
     @Override
     public void sendLoginPluginMessage(String contents) {

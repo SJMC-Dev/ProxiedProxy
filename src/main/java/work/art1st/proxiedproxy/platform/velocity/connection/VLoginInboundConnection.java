@@ -3,7 +3,7 @@ package work.art1st.proxiedproxy.platform.velocity.connection;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
-import com.velocitypowered.proxy.protocol.packet.Handshake;
+import com.velocitypowered.proxy.protocol.packet.HandshakePacket;
 import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
 import work.art1st.proxiedproxy.PPlugin;
@@ -38,7 +38,7 @@ public final class VLoginInboundConnection implements PLoginInboundConnection {
         InitialInboundConnection delegate = ReflectUtil.getDeclaredFieldValue(inbound, "delegate");
         //Field handshakeField = ReflectUtil.handleAccessible(delegate.getClass().getDeclaredField("handshake"));
         //Handshake handshake = (Handshake) handshakeField.get(delegate);
-        Handshake handshake = ReflectUtil.getDeclaredFieldValue(delegate, "handshake");
+        HandshakePacket handshake = ReflectUtil.getDeclaredFieldValue(delegate, "handshake");
         return handshake.getServerAddress();
     }
 

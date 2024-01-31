@@ -7,9 +7,9 @@ import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.protocol.StateRegistry;
-import com.velocitypowered.proxy.protocol.packet.Handshake;
-import com.velocitypowered.proxy.protocol.packet.StatusRequest;
-import com.velocitypowered.proxy.protocol.packet.StatusResponse;
+import com.velocitypowered.proxy.protocol.packet.HandshakePacket;
+import com.velocitypowered.proxy.protocol.packet.StatusRequestPacket;
+import com.velocitypowered.proxy.protocol.packet.StatusResponsePacket;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -33,18 +33,18 @@ public class VPingSessionHandler implements MinecraftSessionHandler {
     }
 
     public void activated() {
-        Handshake handshake = new Handshake();
+        HandshakePacket handshake = new HandshakePacket();
         handshake.setNextStatus(1);
         handshake.setServerAddress(vHost);
         handshake.setPort(this.server.getServerInfo().getAddress().getPort());
         handshake.setProtocolVersion(this.version);
         this.connection.delayedWrite(handshake);
         this.connection.setState(StateRegistry.STATUS);
-        this.connection.delayedWrite(StatusRequest.INSTANCE);
+        this.connection.delayedWrite(StatusRequestPacket.INSTANCE);
         this.connection.flush();
     }
 
-    public boolean handle(StatusResponse packet) {
+    public boolean handle(StatusResponsePacket packet) {
         this.completed = true;
         this.connection.close(true);
         ServerPing ping = VelocityServer.getPingGsonInstance(this.version).fromJson(packet.getStatus(), ServerPing.class);

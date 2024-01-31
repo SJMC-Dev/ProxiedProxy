@@ -77,6 +77,7 @@ public class PPlugin {
         return success;
     }
 
+    // TODO: Use NightConfig more elegantly.
     private static boolean doInitialize() throws IOException {
         entryConfig = new EntryConfig();
         proxyConfig = new ProxyConfig();
@@ -205,6 +206,10 @@ public class PPlugin {
         file.getParentFile().mkdirs();
         file.createNewFile();
         InputStream is = PPlugin.class.getResourceAsStream("/" + filename);
+        if (is == null) {
+            logger.error("Copy resource file failed!");
+            return;
+        }
         FileOutputStream fos = new FileOutputStream(PPlugin.getDataDirectory().resolve(destination).toString());
         byte[] b = new byte[1024];
         int length;
