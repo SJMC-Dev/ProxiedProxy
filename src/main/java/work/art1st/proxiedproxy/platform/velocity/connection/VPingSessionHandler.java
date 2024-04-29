@@ -1,5 +1,6 @@
 package work.art1st.proxiedproxy.platform.velocity.connection;
 
+import com.velocitypowered.api.network.HandshakeIntent;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
@@ -34,7 +35,7 @@ public class VPingSessionHandler implements MinecraftSessionHandler {
 
     public void activated() {
         HandshakePacket handshake = new HandshakePacket();
-        handshake.setNextStatus(1);
+        handshake.setIntent(HandshakeIntent.STATUS);
         handshake.setServerAddress(vHost);
         handshake.setPort(this.server.getServerInfo().getAddress().getPort());
         handshake.setProtocolVersion(this.version);

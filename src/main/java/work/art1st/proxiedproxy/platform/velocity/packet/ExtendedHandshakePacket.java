@@ -1,5 +1,6 @@
 package work.art1st.proxiedproxy.platform.velocity.packet;
 
+import com.velocitypowered.api.network.HandshakeIntent;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
 import com.velocitypowered.proxy.protocol.packet.HandshakePacket;
@@ -18,6 +19,6 @@ public class ExtendedHandshakePacket extends HandshakePacket {
         this.setProtocolVersion(ProtocolVersion.getProtocolVersion(realProtocolVersion));
         this.setServerAddress(ProtocolUtils.readString(buf, MAXIMUM_HOSTNAME_LENGTH));
         this.setPort(buf.readUnsignedShort());
-        this.setNextStatus(ProtocolUtils.readVarInt(buf));
+        this.setIntent(HandshakeIntent.getById(ProtocolUtils.readVarInt(buf)));
     }
 }
