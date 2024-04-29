@@ -22,8 +22,8 @@ dependencies {
 
     compileOnly 'net.md-5:bungeecord-proxy:1.20-R0.1-SNAPSHOT'
 
-    compileOnly 'com.electronwill.night-config:core:3.6.6'
-    compileOnly 'com.electronwill.night-config:toml:3.6.6'
+    implementation 'com.electronwill.night-config:core:3.6.6'
+    implementation 'com.electronwill.night-config:toml:3.6.6'
     compileOnly 'io.netty:netty-all:4.1.92.Final'
     compileOnly 'com.spotify:completable-futures:0.3.5'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.6'
