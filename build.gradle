@@ -6,13 +6,13 @@ plugins {
 }
 
 group = 'work.art1st'
-version = '2.0.5-SNAPSHOT'
+version = '2.0.6-SNAPSHOT'
 
 repositories {
     mavenCentral()
     maven { url "https://maven.elytrium.net/repo/" }
     maven { url "https://repo.codemc.io/repository/maven-public/" }
-    maven { url "https://papermc.io/repo/repository/maven-public/" }
+    maven { url "https://repo.papermc.io/repository/maven-public/" }
 }
 
 dependencies {

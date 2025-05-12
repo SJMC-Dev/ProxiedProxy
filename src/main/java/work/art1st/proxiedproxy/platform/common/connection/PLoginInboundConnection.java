@@ -24,6 +24,7 @@ public interface PLoginInboundConnection {
                 && !origAddress.endsWith("\0fml\0")
                 && !origAddress.endsWith("\0fml2\0")
                 && !origAddress.endsWith("\0fml3\0")
-                && !origAddress.endsWith("\0fml4\0"));
+                && !origAddress.endsWith("\0fml4\0")
+                && !origAddress.endsWith("forge"));
     }
 }
