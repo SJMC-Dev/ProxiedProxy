@@ -163,7 +163,7 @@ public class VServerListPingHandler extends ServerListPingHandler {
                     @Override
                     protected void initChannel(Channel ch) {
                         ch.pipeline()
-                                .addLast(FRAME_DECODER, new MinecraftVarintFrameDecoder())
+                                .addLast(FRAME_DECODER, new MinecraftVarintFrameDecoder(ProtocolUtils.Direction.CLIENTBOUND))
                                 .addLast(READ_TIMEOUT,
                                         new ReadTimeoutHandler(pingOptions.getTimeout() == 0
                                                 ? server.getConfiguration().getReadTimeout() : pingOptions.getTimeout(),
