@@ -21,4 +21,9 @@ public class ExtendedHandshakePacket extends HandshakePacket {
         this.setPort(buf.readUnsignedShort());
         this.setIntent(HandshakeIntent.getById(ProtocolUtils.readVarInt(buf)));
     }
+
+    @Override
+    public int expectedMaxLength(ByteBuf buf, ProtocolUtils.Direction direction, ProtocolVersion version) {
+        return 9 + MAXIMUM_HOSTNAME_LENGTH * 3;
+    }
 }
