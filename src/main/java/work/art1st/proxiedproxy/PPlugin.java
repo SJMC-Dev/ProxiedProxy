@@ -92,93 +92,91 @@ public class PPlugin {
         }
         role = configRole;
         verbose = configFile.getOrElse("verbose", false);
-        switch (role) {
-            case ENTRY:
-                /* You must use Velocity */
-                if (!(instance instanceof VelocityMain)) {
-                    logger.error("You must use velocity for an ENTRY server.");
-                    return false;
-                }
-                VelocityMain vInstance = (VelocityMain) instance;
-                if (!vInstance.configCheck()) {
-                    return false;
-                }
-                /* Replace /server with your specific command, /hub as default. */
-                /* Set verification type */
-                entryConfig.verificationType = VerificationType.valueOf(configFile.getOrElse("entry.verification-type", "RSA").toUpperCase());
-                entryConfig.entryId = configFile.get("entry.entry-id");
-                entryConfig.serverCommandAlias = configFile.getOrElse("entry.server-command-alias", "hub");
-                entryConfig.passThroughPingVhost = configFile.getOrElse("entry.pass-through-ping-vhost", true);
-                entryConfig.sendV1Verification = configFile.getOrElse("entry.send-v1-verification", false);
-                if (entryConfig.entryId == null) {
-                    logger.error("Invalid entry-id.");
-                    return false;
-                }
-                TrustedEntry self = null;
-                switch (entryConfig.verificationType) {
-                    case RSA:
-                        File publicKeyFile = dataDirectory.resolve("PublicKey.pem").toFile();
-                        File privateKeyFile = dataDirectory.resolve("PrivateKey.pem").toFile();
-                        KeyPair keyPair;
-                        if (publicKeyFile.exists() && privateKeyFile.exists()) {
-                            try {
-                                keyPair = RSAUtil.readKeyPair(publicKeyFile, privateKeyFile);
-                            } catch (NoSuchAlgorithmException e) {
-                                throw new RuntimeException(e);
-                            } catch (InvalidKeySpecException e) {
-                                logger.error("Invalid RSA keypair.");
-                                return false;
-                            }
-                        } else {
-                            keyPair = RSAUtil.genKeyPair();
-                            RSAUtil.saveKeyPair(keyPair, publicKeyFile, privateKeyFile);
-                        }
-                        entryConfig.publicKey = keyPair.getPublic();
-                        entryConfig.privateKey = keyPair.getPrivate();
-                        String publicKeyString = new String(Files.readAllBytes(publicKeyFile.toPath()));
-                        self = new TrustedEntry(entryConfig.entryId, publicKeyString, VerificationType.RSA);
-                        break;
-                    case KEY:
-                        entryConfig.key = configFile.get("entry.key.key");
-                        if (entryConfig.key == null) {
-                            logger.error("Invalid entry verification key.");
+        if (role == Role.ENTRY || role == Role.ENTRY_AND_PROXY) {
+            /* You must use Velocity */
+            if (!(instance instanceof VelocityMain)) {
+                logger.error("You must use velocity for an ENTRY server.");
+                return false;
+            }
+            VelocityMain vInstance = (VelocityMain) instance;
+            if (!vInstance.configCheck()) {
+                return false;
+            }
+            /* Replace /server with your specific command, /hub as default. */
+            /* Set verification type */
+            entryConfig.verificationType = VerificationType.valueOf(configFile.getOrElse("entry.verification-type", "RSA").toUpperCase());
+            entryConfig.entryId = configFile.get("entry.entry-id");
+            entryConfig.serverCommandAlias = configFile.getOrElse("entry.server-command-alias", "hub");
+            entryConfig.passThroughPingVhost = configFile.getOrElse("entry.pass-through-ping-vhost", true);
+            entryConfig.sendV1Verification = configFile.getOrElse("entry.send-v1-verification", false);
+            if (entryConfig.entryId == null) {
+                logger.error("Invalid entry-id.");
+                return false;
+            }
+            TrustedEntry self = null;
+            switch (entryConfig.verificationType) {
+                case RSA:
+                    File publicKeyFile = dataDirectory.resolve("PublicKey.pem").toFile();
+                    File privateKeyFile = dataDirectory.resolve("PrivateKey.pem").toFile();
+                    KeyPair keyPair;
+                    if (publicKeyFile.exists() && privateKeyFile.exists()) {
+                        try {
+                            keyPair = RSAUtil.readKeyPair(publicKeyFile, privateKeyFile);
+                        } catch (NoSuchAlgorithmException e) {
+                            throw new RuntimeException(e);
+                        } catch (InvalidKeySpecException e) {
+                            logger.error("Invalid RSA keypair.");
                             return false;
                         }
-                        self = new TrustedEntry(entryConfig.entryId, entryConfig.key, VerificationType.KEY);
-                        break;
-                }
-                FileWriter fileWriter = new FileWriter(dataDirectory.resolve("entry.json").toFile(), false);
-                fileWriter.write(PPlugin.getGson().toJson(self));
-                fileWriter.flush();
-                fileWriter.close();
-                /* Ping forward settings */
-                vInstance.replacePingForward();
-                vInstance.replaceServerCommand();
-                break;
-            case PROXY:
-                proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
-                try {
-                    File trustedEntriesListFile = dataDirectory.resolve("TrustedEntries.json").toFile();
-                    JsonReader reader = new JsonReader(new FileReader(trustedEntriesListFile));
-                    List<TrustedEntry> trustedEntriesList = PPlugin.getGson().fromJson(reader, new TypeToken<List<TrustedEntry>>() {
-                    }.getType());
-                    if (trustedEntriesList == null) {
-                        trustedEntriesList = new ArrayList<>();
+                    } else {
+                        keyPair = RSAUtil.genKeyPair();
+                        RSAUtil.saveKeyPair(keyPair, publicKeyFile, privateKeyFile);
                     }
-                    proxyConfig.trustedEntries.clear();
-                    for (TrustedEntry entry :
-                            trustedEntriesList) {
-                        proxyConfig.trustedEntries.put(entry.getId(), entry);
+                    entryConfig.publicKey = keyPair.getPublic();
+                    entryConfig.privateKey = keyPair.getPrivate();
+                    String publicKeyString = new String(Files.readAllBytes(publicKeyFile.toPath()));
+                    self = new TrustedEntry(entryConfig.entryId, publicKeyString, VerificationType.RSA);
+                    break;
+                case KEY:
+                    entryConfig.key = configFile.get("entry.key.key");
+                    if (entryConfig.key == null) {
+                        logger.error("Invalid entry verification key.");
+                        return false;
                     }
-                } catch (FileNotFoundException e) {
-                    logger.warn("No TrustedEntries.json found.");
-                    logger.warn("Please consult " + WIKI_URL);
-                    copyResourceFile("TrustedEntries.json", "TrustedEntries.json", false);
+                    self = new TrustedEntry(entryConfig.entryId, entryConfig.key, VerificationType.KEY);
+                    break;
+            }
+            FileWriter fileWriter = new FileWriter(dataDirectory.resolve("entry.json").toFile(), false);
+            fileWriter.write(PPlugin.getGson().toJson(self));
+            fileWriter.flush();
+            fileWriter.close();
+            /* Ping forward settings */
+            vInstance.replacePingForward();
+            vInstance.replaceServerCommand();
+        }
+        if (role == Role.PROXY || role == Role.ENTRY_AND_PROXY) {
+            proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
+            try {
+                File trustedEntriesListFile = dataDirectory.resolve("TrustedEntries.json").toFile();
+                JsonReader reader = new JsonReader(new FileReader(trustedEntriesListFile));
+                List<TrustedEntry> trustedEntriesList = PPlugin.getGson().fromJson(reader, new TypeToken<List<TrustedEntry>>() {
+                }.getType());
+                if (trustedEntriesList == null) {
+                    trustedEntriesList = new ArrayList<>();
                 }
-                if (proxyConfig.trustedEntries.isEmpty()) {
-                    logger.warn("There are no entries trusted.");
+                proxyConfig.trustedEntries.clear();
+                for (TrustedEntry entry :
+                        trustedEntriesList) {
+                    proxyConfig.trustedEntries.put(entry.getId(), entry);
                 }
-                break;
+            } catch (FileNotFoundException e) {
+                logger.warn("No TrustedEntries.json found.");
+                logger.warn("Please consult " + WIKI_URL);
+                copyResourceFile("TrustedEntries.json", "TrustedEntries.json", false);
+            }
+            if (proxyConfig.trustedEntries.isEmpty()) {
+                logger.warn("There are no entries trusted.");
+            }
         }
         configFile.close();
         return true;
@@ -193,6 +191,7 @@ public class PPlugin {
     public enum Role {
         ENTRY,
         PROXY,
+        ENTRY_AND_PROXY,
         DISABLED,
         NOT_INITIALIZED
     }

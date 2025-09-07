@@ -17,6 +17,7 @@
 # - PROXY: 接受来自上游ENTRY服务器的连接
 # - ENTRY: 将客户端连接代理到PROXY服务器或Minecraft服务器。ENTRY应当设置为legacy/bungeeguard forwarding。
 #          下游Minecraft服务器(spigot/paper/...)应做相应设置。它们不支持基于RSA/KEY的验证。
+# - ENTRY_AND_PROXY: 同时作为ENTRY和PROXY，需要同时按照两者的要求进行配置
 role = "PROXY"
 
 # 以下选项只针对PROXY服务器

@@ -88,7 +88,7 @@ public final class VelocityMain implements PlatformPluginInstance {
     /* Triggered on ENTRY server. */
     @Subscribe
     public void onServerLoginPluginMessage(ServerLoginPluginMessageEvent event) {
-        if (PPlugin.getRole().equals(PPlugin.Role.ENTRY)) {
+        if (PPlugin.getRole().equals(PPlugin.Role.ENTRY) || PPlugin.getRole().equals(PPlugin.Role.ENTRY_AND_PROXY)) {
             PPlugin.debugOutput("ServerLoginPluginMessage");
             if (event.getIdentifier().getId().equals(channel.getId())) {
                 String content = new String(event.getContents());

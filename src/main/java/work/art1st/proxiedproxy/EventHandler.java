@@ -11,7 +11,7 @@ import work.art1st.proxiedproxy.platform.common.forwarding.ForwardingParser;
 
 public class EventHandler {
     public void handlePreLoginEvent(PPreLoginEvent event) {
-        if (PPlugin.getRole().equals(PPlugin.Role.PROXY)) {
+        if (PPlugin.getRole().equals(PPlugin.Role.PROXY) || PPlugin.getRole().equals(PPlugin.Role.ENTRY_AND_PROXY)) {
             PPlugin.debugOutput("Event: PreLogin");
             PLoginInboundConnection loginInboundConnection = event.getConnection();
             if (!loginInboundConnection.isDirectConnection()) {
@@ -32,7 +32,7 @@ public class EventHandler {
     }
 
     public void handleLoginPluginMessageResponse(PLoginPluginMessageResponseEvent event) {
-        if (PPlugin.getRole().equals(PPlugin.Role.PROXY)) {
+        if (PPlugin.getRole().equals(PPlugin.Role.PROXY) || PPlugin.getRole().equals(PPlugin.Role.ENTRY_AND_PROXY)) {
             PPlugin.debugOutput("Event: LoginPluginMessageResponse");
             PLoginInboundConnection loginInboundConnection = event.getConnection();
             String response = event.getMessage();
@@ -58,7 +58,7 @@ public class EventHandler {
     }
 
     public void handleGameProfileRequest(PGameProfileRequestEvent event) {
-        if (PPlugin.getRole().equals(PPlugin.Role.PROXY)) {
+        if (PPlugin.getRole().equals(PPlugin.Role.PROXY) || PPlugin.getRole().equals(PPlugin.Role.ENTRY_AND_PROXY)) {
             PPlugin.debugOutput("Event: GameProfileRequest");
             ForwardingParser forwarded = PPlugin.getProxyConfig().profileCache.getIfPresent(event.getUsername());
             if (forwarded != null) {
@@ -73,7 +73,7 @@ public class EventHandler {
     }
 
     public void handlePostLogin(PPostLoginEvent event) {
-        if (PPlugin.getRole().equals(PPlugin.Role.PROXY)) {
+        if (PPlugin.getRole().equals(PPlugin.Role.PROXY) || PPlugin.getRole().equals(PPlugin.Role.ENTRY_AND_PROXY)) {
             PPlugin.debugOutput("Event: PostLoginEvent");
             if (!event.isOnlineMode()) {
                 ForwardingParser forwarded = PPlugin.getProxyConfig().profileCache.getIfPresent(event.getUsername());
