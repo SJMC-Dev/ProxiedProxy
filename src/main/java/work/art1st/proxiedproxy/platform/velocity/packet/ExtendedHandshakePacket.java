@@ -23,7 +23,11 @@ public class ExtendedHandshakePacket extends HandshakePacket {
     }
 
     @Override
-    public int expectedMaxLength(ByteBuf buf, ProtocolUtils.Direction direction, ProtocolVersion version) {
+    public int decodeExpectedMaxLength(ByteBuf buf, ProtocolUtils.Direction direction, ProtocolVersion version) {
         return 9 + MAXIMUM_HOSTNAME_LENGTH * 3;
+    }
+
+    public int expectedMaxLength(ByteBuf buf, ProtocolUtils.Direction direction, ProtocolVersion version) {
+        return decodeExpectedMaxLength(buf, direction, version);
     }
 }

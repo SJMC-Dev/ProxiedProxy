@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'work.art1st'
-version = '2.0.9-SNAPSHOT'
+version = '2.0.10-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -20,7 +20,7 @@ dependencies {
     compileOnly 'com.velocitypowered:velocity-api:3.4.0-SNAPSHOT'
     annotationProcessor 'com.velocitypowered:velocity-api:3.4.0-SNAPSHOT'
 
-    compileOnly 'net.md-5:bungeecord-proxy:1.20-R0.1-SNAPSHOT'
+    compileOnly 'net.md-5:bungeecord-proxy:1.20-R0.3-SNAPSHOT'
 
     implementation 'com.electronwill.night-config:core:3.6.6'
     implementation 'com.electronwill.night-config:toml:3.6.6'
