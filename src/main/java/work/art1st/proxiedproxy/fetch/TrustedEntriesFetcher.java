@@ -1,11 +1,10 @@
 package work.art1st.proxiedproxy.fetch;
 
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import lombok.Getter;
 import work.art1st.proxiedproxy.PPlugin;
 import work.art1st.proxiedproxy.config.TrustedEntry;
 
+import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,22 +24,27 @@ import java.util.concurrent.TimeUnit;
 /**
  * Periodically fetches the trusted entry list from a remote source,
  * writes it into TrustedEntries.json and reloads it.
- * The fetched list always overwrites TrustedEntries.json; on any fetch
- * or parse failure the previous file and list are kept unchanged.
+ * The fetched list always overwrites TrustedEntries.json. On any failure —
+ * fetch error, invalid response, or an empty list — the previous file and
+ * list are kept unchanged.
  */
 public class TrustedEntriesFetcher {
     public static final String DEFAULT_FETCH_URL = "https://skin.mualliance.ltd/api/union/network/entry";
-    private static final TypeToken<List<TrustedEntry>> ENTRY_LIST_TYPE = new TypeToken<>() {};
 
     private final String url;
-    @Getter
     private final long intervalMinutes;
+    private final HttpRequest request;
     private final HttpClient httpClient;
     private final ScheduledExecutorService scheduler;
 
     public TrustedEntriesFetcher(String url, long intervalMinutes) {
         this.url = url;
         this.intervalMinutes = Math.max(1, intervalMinutes);
+        /* Fails fast on an empty or non-absolute URL, so a misconfiguration is caught at startup/reload. */
+        this.request = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(15))
+                .GET()
+                .build();
         this.httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(10))
@@ -54,6 +58,7 @@ public class TrustedEntriesFetcher {
 
     /* Fetches once at startup, then once per interval. */
     public void start() {
+        PPlugin.getLogger().info("Auto-fetching trusted entries from {} every {} minute(s).", url, intervalMinutes);
         scheduler.scheduleAtFixedRate(this::fetchAndApply, 0, intervalMinutes, TimeUnit.MINUTES);
     }
 
@@ -61,12 +66,8 @@ public class TrustedEntriesFetcher {
         scheduler.shutdownNow();
     }
 
-    void fetchAndApply() {
+    private void fetchAndApply() {
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(15))
-                    .GET()
-                    .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
                 PPlugin.getLogger().warn("Fetching trusted entries from {} failed: HTTP {}", url, response.statusCode());
@@ -74,6 +75,11 @@ public class TrustedEntriesFetcher {
             }
             List<TrustedEntry> entries = parse(response.body());
             if (entries == null) {
+                return;
+            }
+            if (entries.isEmpty()) {
+                /* A momentarily broken source must not wipe every trusted entry. */
+                PPlugin.getLogger().warn("Fetched trusted entry list from {} is empty. Keeping the existing list.", url);
                 return;
             }
             writeToFile(entries);
@@ -90,9 +96,9 @@ public class TrustedEntriesFetcher {
     private List<TrustedEntry> parse(String body) {
         List<TrustedEntry> entries;
         try {
-            entries = PPlugin.getGson().fromJson(body, ENTRY_LIST_TYPE.getType());
+            entries = PPlugin.getGson().fromJson(body, PPlugin.ENTRY_LIST_TYPE.getType());
         } catch (RuntimeException e) {
-            PPlugin.getLogger().warn("Response from {} is not a valid trusted entry list.", url);
+            PPlugin.getLogger().warn("Response from {} is not a valid trusted entry list.", url, e);
             return null;
         }
         if (entries == null) {
@@ -113,12 +119,18 @@ public class TrustedEntriesFetcher {
         return valid;
     }
 
-    private void writeToFile(List<TrustedEntry> entries) throws Exception {
+    private void writeToFile(List<TrustedEntry> entries) throws IOException {
         Path target = PPlugin.getDataDirectory().resolve("TrustedEntries.json");
-        Path temp = PPlugin.getDataDirectory().resolve("TrustedEntries.json.tmp");
-        try (Writer writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
-            new GsonBuilder().setPrettyPrinting().create().toJson(entries, ENTRY_LIST_TYPE.getType(), writer);
+        /* Unique temp file: a successor started by a reload can never interleave with a write still in flight. */
+        Path temp = Files.createTempFile(PPlugin.getDataDirectory(), "TrustedEntries.json.", ".tmp");
+        try {
+            try (Writer writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
+                new GsonBuilder().setPrettyPrinting().create().toJson(entries, PPlugin.ENTRY_LIST_TYPE.getType(), writer);
+            }
+            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            Files.deleteIfExists(temp);
+            throw e;
         }
-        Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
     }
 }

@@ -24,6 +24,13 @@ role = "PROXY"
 [proxy]
 # 是否允许客户端直接连接PROXY
 allow-client-connection = true
+# 定时从远程拉取ENTRY列表，覆盖TrustedEntries.json并自动重载
+# 手动维护TrustedEntries.json时请保持false
+auto-fetch-entries = false
+# 拉取源URL
+auto-fetch-url = "https://skin.mualliance.ltd/api/union/network/entry"
+# 拉取间隔（分钟）
+auto-fetch-interval-minutes = 60
 
 # 以下选项只针对ENTRY服务器
 [entry]
@@ -60,6 +67,8 @@ key = ""
 
 ### PROXY设置教程
 安装本插件，将上游ENTRY的公钥/KEY添加到`TrustedEntries.json`中（注意json格式），使用`/prox reload`重新加载配置文件。
+
+也可以自动同步：在`config.toml`中设置`proxy.auto-fetch-entries = true`，插件会按`proxy.auto-fetch-interval-minutes`（分钟，默认60）的间隔从`proxy.auto-fetch-url`拉取条目列表并覆盖`TrustedEntries.json`。开启后请勿再手工维护该文件；拉取失败或返回空列表时保留原有列表。
 
 ## 构建
 

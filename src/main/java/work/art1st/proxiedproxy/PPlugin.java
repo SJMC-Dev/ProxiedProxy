@@ -50,6 +50,7 @@ public class PPlugin {
     private static final EventHandler eventHandler = new EventHandler();
     @Getter
     private static final Gson gson = new Gson();
+    public static final TypeToken<List<TrustedEntry>> ENTRY_LIST_TYPE = new TypeToken<>() {};
 
     public static void construct(PlatformPluginInstance pluginInstance, Path instanceDataDirectory, Logger instanceLogger) {
         instance = pluginInstance;
@@ -161,16 +162,22 @@ public class PPlugin {
         if (role == Role.PROXY || role == Role.ENTRY_AND_PROXY) {
             proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
             loadTrustedEntries();
-            /* Periodically fetch the trusted entry list from a remote source. */
+            /* Periodically fetch the trusted entry list from a remote source.
+               Stop the previous fetcher unconditionally, so that turning the option off takes effect on reload. */
+            if (trustedEntriesFetcher != null) {
+                trustedEntriesFetcher.stop();
+                trustedEntriesFetcher = null;
+            }
             if (configFile.getOrElse("proxy.auto-fetch-entries", false)) {
                 String url = configFile.getOrElse("proxy.auto-fetch-url", TrustedEntriesFetcher.DEFAULT_FETCH_URL);
                 long interval = configFile.getOrElse("proxy.auto-fetch-interval-minutes", 60L);
-                if (trustedEntriesFetcher != null) {
-                    trustedEntriesFetcher.stop();
+                try {
+                    trustedEntriesFetcher = new TrustedEntriesFetcher(url, interval);
+                    trustedEntriesFetcher.start();
+                } catch (IllegalArgumentException e) {
+                    logger.error("Invalid auto-fetch URL \"" + url + "\": " + e.getMessage());
+                    logger.error("Auto-fetch disabled.");
                 }
-                trustedEntriesFetcher = new TrustedEntriesFetcher(url, interval);
-                trustedEntriesFetcher.start();
-                logger.info("Auto-fetching trusted entries from {} every {} minute(s).", url, trustedEntriesFetcher.getIntervalMinutes());
             }
         }
         configFile.close();
@@ -186,8 +193,7 @@ public class PPlugin {
         try {
             File trustedEntriesListFile = dataDirectory.resolve("TrustedEntries.json").toFile();
             try (JsonReader reader = new JsonReader(new FileReader(trustedEntriesListFile))) {
-                trustedEntriesList = PPlugin.getGson().fromJson(reader, new TypeToken<List<TrustedEntry>>() {
-                }.getType());
+                trustedEntriesList = PPlugin.getGson().fromJson(reader, ENTRY_LIST_TYPE.getType());
             }
             if (trustedEntriesList == null) {
                 trustedEntriesList = new ArrayList<>();
@@ -197,13 +203,13 @@ public class PPlugin {
             logger.warn("Please consult " + WIKI_URL);
             copyResourceFile("TrustedEntries.json", "TrustedEntries.json", false);
         }
-        /* Build the whole map before replacing, so connections are not affected during the swap. */
+        /* Build the whole map first, then publish it by reference:
+           readers on connection threads never see a partially filled list. */
         Map<String, TrustedEntry> loaded = new HashMap<>();
         for (TrustedEntry entry : trustedEntriesList) {
             loaded.put(entry.getId(), entry);
         }
-        proxyConfig.trustedEntries.clear();
-        proxyConfig.trustedEntries.putAll(loaded);
+        proxyConfig.trustedEntries = loaded;
         if (proxyConfig.trustedEntries.isEmpty()) {
             logger.warn("There are no entries trusted.");
         }

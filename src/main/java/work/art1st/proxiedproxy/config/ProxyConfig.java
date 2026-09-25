@@ -12,8 +12,9 @@ import java.util.concurrent.TimeUnit;
  * This class stores configs for PROXY server.
  */
 public class ProxyConfig {
-    /* ConcurrentHashMap: this map is hot-reloaded by TrustedEntriesFetcher while connections read it. */
-    public final Map<String, TrustedEntry> trustedEntries = new ConcurrentHashMap<>();
+    /* Hot-reloaded by TrustedEntriesFetcher: the whole map is swapped in by reference
+       (volatile publication) and never mutated after being published. */
+    public volatile Map<String, TrustedEntry> trustedEntries = new ConcurrentHashMap<>();
     public boolean allowClientConnection;
     public final int FORWARDING_PACKET_TIMEOUT = 10;
     public final Cache<String, ForwardingParser> profileCache = Caffeine.newBuilder()
