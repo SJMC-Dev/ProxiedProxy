@@ -7,3 +7,11 @@ verbose = false
 [proxy]
     # Set to false to disable connection from clients.
     allow-client-connection = false
+    # Periodically fetch the trusted entry list from a remote source,
+    # overwriting TrustedEntries.json and reloading it.
+    # Keep it false if you maintain TrustedEntries.json manually.
+    auto-fetch-entries = false
+    # Fetch source. Defaults to the MUA Union network entry list.
+    auto-fetch-url = "https://skin.mualliance.ltd/api/union/network/entry"
+    # Fetch interval in minutes.
+    auto-fetch-interval-minutes = 60

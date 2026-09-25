@@ -10,6 +10,7 @@ import work.art1st.proxiedproxy.config.EntryConfig;
 import work.art1st.proxiedproxy.config.ProxyConfig;
 import work.art1st.proxiedproxy.config.TrustedEntry;
 import work.art1st.proxiedproxy.config.VerificationType;
+import work.art1st.proxiedproxy.fetch.TrustedEntriesFetcher;
 import work.art1st.proxiedproxy.platform.common.PlatformPluginInstance;
 import work.art1st.proxiedproxy.platform.velocity.VelocityMain;
 import work.art1st.proxiedproxy.util.RSAUtil;
@@ -21,7 +22,9 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PPlugin {
     public static final String WIKI_URL = "https://wiki.mualliance.ltd/%E8%81%94%E5%90%88%E5%A4%A7%E5%8E%85";
@@ -42,10 +45,12 @@ public class PPlugin {
     private static FileConfig configFile;
     @Getter
     private static Path dataDirectory;
+    private static TrustedEntriesFetcher trustedEntriesFetcher;
     @Getter
     private static final EventHandler eventHandler = new EventHandler();
     @Getter
     private static final Gson gson = new Gson();
+    public static final TypeToken<List<TrustedEntry>> ENTRY_LIST_TYPE = new TypeToken<>() {};
 
     public static void construct(PlatformPluginInstance pluginInstance, Path instanceDataDirectory, Logger instanceLogger) {
         instance = pluginInstance;
@@ -156,30 +161,58 @@ public class PPlugin {
         }
         if (role == Role.PROXY || role == Role.ENTRY_AND_PROXY) {
             proxyConfig.allowClientConnection = configFile.getOrElse("proxy.allow-client-connection", false);
-            try {
-                File trustedEntriesListFile = dataDirectory.resolve("TrustedEntries.json").toFile();
-                JsonReader reader = new JsonReader(new FileReader(trustedEntriesListFile));
-                List<TrustedEntry> trustedEntriesList = PPlugin.getGson().fromJson(reader, new TypeToken<List<TrustedEntry>>() {
-                }.getType());
-                if (trustedEntriesList == null) {
-                    trustedEntriesList = new ArrayList<>();
-                }
-                proxyConfig.trustedEntries.clear();
-                for (TrustedEntry entry :
-                        trustedEntriesList) {
-                    proxyConfig.trustedEntries.put(entry.getId(), entry);
-                }
-            } catch (FileNotFoundException e) {
-                logger.warn("No TrustedEntries.json found.");
-                logger.warn("Please consult " + WIKI_URL);
-                copyResourceFile("TrustedEntries.json", "TrustedEntries.json", false);
+            loadTrustedEntries();
+            /* Periodically fetch the trusted entry list from a remote source.
+               Stop the previous fetcher unconditionally, so that turning the option off takes effect on reload. */
+            if (trustedEntriesFetcher != null) {
+                trustedEntriesFetcher.stop();
+                trustedEntriesFetcher = null;
             }
-            if (proxyConfig.trustedEntries.isEmpty()) {
-                logger.warn("There are no entries trusted.");
+            if (configFile.getOrElse("proxy.auto-fetch-entries", false)) {
+                String url = configFile.getOrElse("proxy.auto-fetch-url", TrustedEntriesFetcher.DEFAULT_FETCH_URL);
+                long interval = configFile.getOrElse("proxy.auto-fetch-interval-minutes", 60L);
+                try {
+                    trustedEntriesFetcher = new TrustedEntriesFetcher(url, interval);
+                    trustedEntriesFetcher.start();
+                } catch (IllegalArgumentException e) {
+                    logger.error("Invalid auto-fetch URL \"" + url + "\": " + e.getMessage());
+                    logger.error("Auto-fetch disabled.");
+                }
             }
         }
         configFile.close();
         return true;
+    }
+
+    /**
+     * Loads TrustedEntries.json into proxyConfig.
+     * Called on initialization and again after each auto-fetch.
+     */
+    public static void loadTrustedEntries() throws IOException {
+        List<TrustedEntry> trustedEntriesList = new ArrayList<>();
+        try {
+            File trustedEntriesListFile = dataDirectory.resolve("TrustedEntries.json").toFile();
+            try (JsonReader reader = new JsonReader(new FileReader(trustedEntriesListFile))) {
+                trustedEntriesList = PPlugin.getGson().fromJson(reader, ENTRY_LIST_TYPE.getType());
+            }
+            if (trustedEntriesList == null) {
+                trustedEntriesList = new ArrayList<>();
+            }
+        } catch (FileNotFoundException e) {
+            logger.warn("No TrustedEntries.json found.");
+            logger.warn("Please consult " + WIKI_URL);
+            copyResourceFile("TrustedEntries.json", "TrustedEntries.json", false);
+        }
+        /* Build the whole map first, then publish it by reference:
+           readers on connection threads never see a partially filled list. */
+        Map<String, TrustedEntry> loaded = new HashMap<>();
+        for (TrustedEntry entry : trustedEntriesList) {
+            loaded.put(entry.getId(), entry);
+        }
+        proxyConfig.trustedEntries = loaded;
+        if (proxyConfig.trustedEntries.isEmpty()) {
+            logger.warn("There are no entries trusted.");
+        }
     }
 
     public static void debugOutput(String s) {
