@@ -4,15 +4,16 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import work.art1st.proxiedproxy.platform.common.forwarding.ForwardingParser;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * This class stores configs for PROXY server.
  */
 public class ProxyConfig {
-    public final Map<String, TrustedEntry> trustedEntries = new HashMap<>();
+    /* ConcurrentHashMap: this map is hot-reloaded by TrustedEntriesFetcher while connections read it. */
+    public final Map<String, TrustedEntry> trustedEntries = new ConcurrentHashMap<>();
     public boolean allowClientConnection;
     public final int FORWARDING_PACKET_TIMEOUT = 10;
     public final Cache<String, ForwardingParser> profileCache = Caffeine.newBuilder()
