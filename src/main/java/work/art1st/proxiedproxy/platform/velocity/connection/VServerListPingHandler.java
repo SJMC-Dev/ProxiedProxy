@@ -8,7 +8,6 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.util.ModInfo;
 import com.velocitypowered.proxy.VelocityServer;
-import com.velocitypowered.proxy.config.PingPassthroughMode;
 import com.velocitypowered.proxy.config.VelocityConfiguration;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.util.ServerListPingHandler;
@@ -25,8 +24,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,15 +59,20 @@ public class VServerListPingHandler extends ServerListPingHandler {
         );
     }
 
-    /* From velocity */
+    /* From velocity.
+     * PingPassthroughMode is an enum (DISABLED/ALL/MODS/DESCRIPTION) on Velocity 3.x,
+     * but a record of five passthrough booleans on Velocity 4.x. Its members must never
+     * be referenced statically here: the plugin is compiled against Velocity 3.x but has
+     * to run on both, so the mode object is treated as an opaque Object and inspected
+     * at runtime. */
     @Override
     public CompletableFuture<ServerPing> getInitialPing(VelocityInboundConnection connection) {
         VelocityConfiguration configuration = server.getConfiguration();
         ProtocolVersion shownVersion = ProtocolVersion.isSupported(connection.getProtocolVersion())
                 ? connection.getProtocolVersion() : ProtocolVersion.MAXIMUM_VERSION;
-        PingPassthroughMode passthroughMode = configuration.getPingPassthrough();
+        Object passthroughMode = configuration.getPingPassthrough();
 
-        if (passthroughMode == PingPassthroughMode.DISABLED) {
+        if (!isPingPassthroughEnabled(passthroughMode)) {
             return CompletableFuture.completedFuture(constructLocalPing(shownVersion));
         } else {
             String virtualHostStr = connection.getVirtualHost().map(InetSocketAddress::getHostString)
@@ -78,8 +84,25 @@ public class VServerListPingHandler extends ServerListPingHandler {
         }
     }
 
+    private static boolean isPingPassthroughEnabled(@Nullable Object passthroughMode) {
+        if (passthroughMode == null) {
+            return false;
+        }
+        Class<?> modeClass = passthroughMode.getClass();
+        if (modeClass.isEnum()) {
+            /* Velocity 3.x */
+            return !"DISABLED".equals(((Enum<?>) passthroughMode).name());
+        }
+        /* Velocity 4.x: disabled only when no flag is set */
+        try {
+            return (boolean) modeClass.getMethod("enabled").invoke(passthroughMode);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            return true;
+        }
+    }
+
     private CompletableFuture<ServerPing> attemptPingPassthrough(VelocityInboundConnection connection,
-                                                                 PingPassthroughMode mode, List<String> servers, ProtocolVersion responseProtocolVersion) {
+                                                                 Object passthroughMode, List<String> servers, ProtocolVersion responseProtocolVersion) {
         ServerPing fallback = constructLocalPing(connection.getProtocolVersion());
         List<CompletableFuture<ServerPing>> pings = new ArrayList<>();
         for (String s : servers) {
@@ -98,57 +121,91 @@ public class VServerListPingHandler extends ServerListPingHandler {
 
         CompletableFuture<List<ServerPing>> pingResponses = CompletableFutures.successfulAsList(pings,
                 (ex) -> fallback);
-        switch (mode) {
-            case ALL:
-                return pingResponses.thenApply(responses -> {
-                    // Find the first non-fallback
-                    for (ServerPing response : responses) {
-                        if (response == fallback) {
-                            continue;
-                        }
-                        return response;
-                    }
-                    return fallback;
-                });
-            case MODS:
-                return pingResponses.thenApply(responses -> {
-                    // Find the first non-fallback that contains a mod list
-                    for (ServerPing response : responses) {
-                        if (response == fallback) {
-                            continue;
-                        }
-                        Optional<ModInfo> modInfo = response.getModinfo();
-                        if (modInfo.isPresent()) {
-                            return fallback.asBuilder().mods(modInfo.get()).build();
-                        }
-                    }
-                    return fallback;
-                });
-            case DESCRIPTION:
-                return pingResponses.thenApply(responses -> {
-                    // Find the first non-fallback. If it includes a modlist, add it too.
-                    for (ServerPing response : responses) {
-                        if (response == fallback) {
-                            continue;
-                        }
+        if (passthroughMode.getClass().isEnum()) {
+            return pingResponses.thenApply(responses -> applyEnumPassthrough((Enum<?>) passthroughMode, fallback, responses));
+        }
+        return pingResponses.thenApply(responses -> applyRecordPassthrough(passthroughMode, fallback, responses));
+    }
 
-                        if (response.getDescriptionComponent() == null) {
-                            continue;
-                        }
-
-                        return new ServerPing(
-                                fallback.getVersion(),
-                                fallback.getPlayers().orElse(null),
-                                response.getDescriptionComponent(),
-                                fallback.getFavicon().orElse(null),
-                                response.getModinfo().orElse(null)
-                        );
+    /* Velocity 3.x passthrough modes */
+    private static ServerPing applyEnumPassthrough(Enum<?> mode, ServerPing fallback, List<ServerPing> responses) {
+        switch (mode.name()) {
+            case "ALL":
+                // Find the first non-fallback
+                for (ServerPing response : responses) {
+                    if (response == fallback) {
+                        continue;
                     }
-                    return fallback;
-                });
+                    return response;
+                }
+                return fallback;
+            case "MODS":
+                // Find the first non-fallback that contains a mod list
+                for (ServerPing response : responses) {
+                    if (response == fallback) {
+                        continue;
+                    }
+                    Optional<ModInfo> modInfo = response.getModinfo();
+                    if (modInfo.isPresent()) {
+                        return fallback.asBuilder().mods(modInfo.get()).build();
+                    }
+                }
+                return fallback;
+            case "DESCRIPTION":
+                // Find the first non-fallback. If it includes a modlist, add it too.
+                for (ServerPing response : responses) {
+                    if (response == fallback) {
+                        continue;
+                    }
+
+                    if (response.getDescriptionComponent() == null) {
+                        continue;
+                    }
+
+                    return new ServerPing(
+                            fallback.getVersion(),
+                            fallback.getPlayers().orElse(null),
+                            response.getDescriptionComponent(),
+                            fallback.getFavicon().orElse(null),
+                            response.getModinfo().orElse(null)
+                    );
+                }
+                return fallback;
             // Not possible, but covered for completeness.
             default:
-                return CompletableFuture.completedFuture(fallback);
+                return fallback;
+        }
+    }
+
+    /* Velocity 4.x per-field passthrough flags */
+    private static ServerPing applyRecordPassthrough(Object mode, ServerPing fallback, List<ServerPing> responses) {
+        // Find the first non-fallback
+        ServerPing response = null;
+        for (ServerPing ping : responses) {
+            if (ping != fallback) {
+                response = ping;
+                break;
+            }
+        }
+        if (response == null) {
+            return fallback;
+        }
+        return new ServerPing(
+                passthroughFlag(mode, "version") ? response.getVersion() : fallback.getVersion(),
+                passthroughFlag(mode, "players") ? response.getPlayers().orElse(null) : fallback.getPlayers().orElse(null),
+                passthroughFlag(mode, "description")
+                        ? (response.getDescriptionComponent() != null ? response.getDescriptionComponent() : Component.empty())
+                        : fallback.getDescriptionComponent(),
+                passthroughFlag(mode, "favicon") ? response.getFavicon().orElse(null) : fallback.getFavicon().orElse(null),
+                passthroughFlag(mode, "modinfo") ? response.getModinfo().orElse(null) : fallback.getModinfo().orElse(null)
+        );
+    }
+
+    private static boolean passthroughFlag(Object mode, String flag) {
+        try {
+            return (boolean) mode.getClass().getMethod(flag).invoke(mode);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            return true;
         }
     }
 
