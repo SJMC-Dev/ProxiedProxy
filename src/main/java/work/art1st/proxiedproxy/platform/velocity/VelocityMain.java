@@ -11,6 +11,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.VelocityServer;
+import com.velocitypowered.proxy.config.PingPassthroughMode;
 import com.velocitypowered.proxy.config.PlayerInfoForwarding;
 import com.velocitypowered.proxy.config.VelocityConfiguration;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
@@ -140,9 +141,13 @@ public final class VelocityMain implements PlatformPluginInstance {
         }
     }
 
+    private static boolean hasLegacyPingPassthroughMode() {
+        return PingPassthroughMode.class.isEnum();
+    }
+
     @SneakyThrows
     public void replacePingForward() {
-        if (PPlugin.getEntryConfig().passThroughPingVhost) {
+        if (PPlugin.getEntryConfig().passThroughPingVhost && hasLegacyPingPassthroughMode()) {
             //Field serverListPingHandlerField = ReflectUtil.handleAccessible(proxy.getClass().getDeclaredField("serverListPingHandler"));
             //if (velocityServerListPingHandler == null) {
             //    velocityServerListPingHandler = (ServerListPingHandler) serverListPingHandlerField.get(proxy);
